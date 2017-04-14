@@ -11,8 +11,11 @@ import { Tag } from "@atomist/cortex/stub/Tag";
 export class MyFirstEventHandler implements HandleEvent<Tag, Tag> {
     handle(event: Match<Tag, Tag>): Plan {
         let root: Tag = event.root();
-        let message = new DirectedMessage(`${root.nodeName()} event: ${root.name}`, new ChannelAddress("general"));
-        return Plan.ofMessage(message);
+        if (root.name == "magictag") {
+            let message = new DirectedMessage(`${root.nodeName()} event: ${root.name}`, new ChannelAddress("general"));
+            return Plan.ofMessage(message);
+        }
+        else return new Plan();
     }
 }
 
