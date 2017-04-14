@@ -7,14 +7,14 @@ import { Pattern } from '@atomist/rug/operations/RugOperation';
  */
 @CommandHandler("WhatShouldIDo", "list stuff that is my job to fix")
 @Tags("workflow", "satellite-of-love")
-@Intent("what should I do today")
+@Intent("I'm bored")
 export class WhatShouldIDo implements HandleCommand {
 
     @MappedParameter("atomist://slack/user")
     user: string;
 
     handle(command: HandlerContext): Plan {
-        let message = new ResponseMessage(`Go to the beach, @<${this.user}.`);
+        let message = new ResponseMessage(`Go to the beach, @<${this.user}>.`);
         return Plan.ofMessage(message);
     }
 }
