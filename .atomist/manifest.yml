@@ -1,4 +1,4 @@
-group: "atomist-rugs"
+group: "satellite-of-love"
 artifact: "workflow-rugs"
 version: "0.1.0"
-requires: "[0.25.1,1.0.0)"
+requires: "[0.25.3,1.0.0)"

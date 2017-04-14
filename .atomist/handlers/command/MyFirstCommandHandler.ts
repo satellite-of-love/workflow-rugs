@@ -7,7 +7,7 @@ import { Pattern } from '@atomist/rug/operations/RugOperation';
  */
 @CommandHandler("WhatShouldIDo", "list stuff that is my job to fix")
 @Tags("workflow", "satellite-of-love")
-@Intent("what should I do today?")
+@Intent("what should I do today")
 export class WhatShouldIDo implements HandleCommand {
 
     @MappedParameter("atomist://slack/user")
