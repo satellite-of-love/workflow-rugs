@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@atomist/rugs": "^0.24.0"
+  },
+  "scripts": {
+    "test": "rug test"
+  }
+}

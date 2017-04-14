@@ -1,0 +1,4 @@
+group: "atomist-rugs"
+artifact: "workflow-rugs"
+version: "0.1.0"
+requires: "[0.25.1,1.0.0)"
