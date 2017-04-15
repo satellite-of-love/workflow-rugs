@@ -11,3 +11,18 @@ generator:
     branch: "7557a1b6213caa4ea8d4ae71785722339bcc75a3"
     sha: "7557a1b"
 
+---
+kind: "operation"
+client: "rug-cli 0.30.2"
+editor:
+  name: "BumpVersion"
+  group: "satellite-of-love"
+  artifact: "rest-service-generator"
+  version: "0.11.3"
+  origin:
+    repo: "git@github.com:satellite-of-love/rest-service-generator"
+    branch: "master"
+    sha: "738735a"
+  parameters:
+    - "component": "patch"
+
