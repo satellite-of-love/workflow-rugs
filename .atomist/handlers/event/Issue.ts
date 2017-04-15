@@ -60,38 +60,46 @@ class PersonalIssues implements HandleEvent<Issue, Issue> {
         //     },
         // });
 
-      if (isInProcess) {
-        message.addAction({
-            label: "Start",
-            instruction: {
-                kind: "command",
-                name: "atomist-rugs:github-handlers:AddLabelGitHubIssue",
-                parameters: {
-                    issue: issue.number,
-                    owner: issue.repo.owner,
-                    repo: issue.repo.name,
-                    label: inProcessLabelName
+        if (isInProcess) {
+            message.addAction({
+                label: "Start",
+                instruction: {
+                    kind: "command",
+                    name: {
+                        name: "AddLabelGitHubIssue",
+                        group: "atomist-rugs",
+                        artifact: "github-handlers"
+                    },
+                    parameters: {
+                        issue: issue.number,
+                        owner: issue.repo.owner,
+                        repo: issue.repo.name,
+                        label: inProcessLabelName
+                    },
                 },
-            },
-        });
-      } else {
-          // not in process
-          message.addAction({
-            label: "Stop",
-            instruction: {
-                kind: "command",
-                name: "atomist-rugs:github-handlers:RemoveLabelGitHubIssue",
-                parameters: {
-                    issue: issue.number,
-                    owner: issue.repo.owner,
-                    repo: issue.repo.name,
-                    label: inProcessLabelName
+            });
+        } else {
+            // not in process
+            message.addAction({
+                label: "Stop",
+                instruction: {
+                    kind: "command",
+                    name:  {
+                        name: "RemoveLabelGitHubIssue",
+                        group: "atomist-rugs",
+                        artifact: "github-handlers"
+                    },
+                    parameters: {
+                        issue: issue.number,
+                        owner: issue.repo.owner,
+                        repo: issue.repo.name,
+                        label: inProcessLabelName
+                    },
                 },
-            },
-        });
-      }
+            });
+        }
 
-// TODO: Done! which closes the issue and removes InProcess. 
+        // TODO: Done! which closes the issue and removes InProcess. 
         // message.addAction({
         //     label: "Close",
         //     instruction: {
