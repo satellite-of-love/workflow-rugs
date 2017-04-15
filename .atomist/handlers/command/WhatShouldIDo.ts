@@ -14,7 +14,10 @@ export class WhatShouldIDo implements HandleCommand {
     user: string;
 
     handle(command: HandlerContext): Plan {
-        let message = new ResponseMessage(`Go to the beach, @<${this.user}>.`);
+        let pxe = command.pathExpressionEngine;
+
+
+        let message = new ResponseMessage(`Go to the beach, <@${this.user}>.`);
         return Plan.ofMessage(message);
     }
 }
