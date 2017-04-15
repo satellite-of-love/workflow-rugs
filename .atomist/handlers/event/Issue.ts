@@ -65,7 +65,7 @@ class PersonalIssues implements HandleEvent<Issue, Issue> {
             label: "Start",
             instruction: {
                 kind: "command",
-                name: "AddLabelGitHubIssue",
+                name: "atomist-rugs:github-handlers:AddLabelGitHubIssue",
                 parameters: {
                     issue: issue.number,
                     owner: issue.repo.owner,
@@ -80,7 +80,7 @@ class PersonalIssues implements HandleEvent<Issue, Issue> {
             label: "Stop",
             instruction: {
                 kind: "command",
-                name: "RemoveLabelGitHubIssue",
+                name: "atomist-rugs:github-handlers:RemoveLabelGitHubIssue",
                 parameters: {
                     issue: issue.number,
                     owner: issue.repo.owner,
