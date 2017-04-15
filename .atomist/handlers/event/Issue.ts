@@ -26,6 +26,11 @@ class PersonalIssues implements HandleEvent<Issue, Issue> {
         let myGithubUser = "jessitron"
         let myPersonalIssuesChannel = "jessitron-status"
 
+        let anyIssue: any = issue;
+        anyIssue.channelId = myPersonalIssuesChannel;
+
+        console.log("I hope I just set the channel id. " + JSON.stringify(issue, null, 1));
+
         let isInProcess = issue.labels.filter(label => label.name === "in-process").length > 0;
 
         let me = issue.assignees.filter(gh => gh.login == myGithubUser)
@@ -36,6 +41,7 @@ class PersonalIssues implements HandleEvent<Issue, Issue> {
 
         const cid = myGithubUser + "-issue/" + issue.repo.owner + "/" + issue.repo.name + "/" + issue.number;
         const message = new LifecycleMessage(issue, cid);
+        let sneakyMessage: any = message;
 
         // TODO
         // message.addAction({
