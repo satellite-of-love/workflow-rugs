@@ -31,9 +31,9 @@ class PersonalIssues implements HandleEvent<Issue, Issue> {
         let anyIssue: any = issue;
         anyIssue.channelId = myPersonalIssuesChannel;
 
-        console.log("I hope I just set the channel id. " + issue.toString());
+        console.log("I hope I just set the channel id. " + anyIssue.channelId);
 
-        let isInProcess = anyIssue.hasProperty("labels") && issue.labels && issue.labels.filter(label => label.name === "in-process").length > 0;
+        let isInProcess = issue.labels.filter(label => label.name === "in-process").length > 0;
 
         let me = issue.assignees.filter(gh => gh.login == myGithubUser)
         if (me.length === 0) {
