@@ -7,13 +7,18 @@ import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
  * A sample Rug TypeScript command handler.
  */
 @CommandHandler("ListMyIssues", "Make it possible to add this new label to an issue in this repo")
-@Tags("labels", "github")
+@Tags("satellite-of-love", "github")
 @Intent("list my issues")
 @Secrets("github://user_token?scopes=repo")
 class ListMyIssues implements HandleCommand {
 
+    // TODO: accept user; use path expression to get GitHub login.
+
     handle(command: HandlerContext): Plan {
         let plan = new Plan();
+
+        let user = "jessitron"
+        let org = "satellite-of-love"
 
         const base = `https://api.github.com/search/issues`;
 
@@ -23,7 +28,7 @@ class ListMyIssues implements HandleCommand {
                     kind: "execute",
                     name: "http",
                     parameters: {
-                        url: `${base}?q=assignee:jessitron%20org:satellite-of-love`,
+                        url: `${base}?q=assignee:${user}%20org:${org}`,
                         method: "get",
                         config: {
                             headers: {
@@ -57,9 +62,9 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
             return {
                 "mrkdwn_in": ["text"],
-                "title": `<${item.url}|${repo} ${type} #${item.number}: ${item.title}>`,
+                "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
                 "text": `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}, closed ${this.timeSince(item.closed_at)}`,
-                "fallback": item.url
+                "fallback": item.html_url
             };
         });
 
@@ -106,7 +111,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
             return `${Math.round(secondsPast / 86400)}d ago`;
         }
         else {
-            return dateString;
+            return dateString.substr(0,10);
         }
     }
 }
