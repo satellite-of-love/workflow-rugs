@@ -8,7 +8,7 @@ import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
  */
 @CommandHandler("ListMyIssues", "Make it possible to add this new label to an issue in this repo")
 @Tags("labels", "github")
-@Intent("add repo label")
+@Intent("list my issues")
 @Secrets("github://user_token?scopes=repo")
 class ListMyIssues implements HandleCommand {
 
