@@ -59,7 +59,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
         let closedOnes = result.items.filter(item => this.not_long_ago(item.closed_at));
         let openOnes = result.items.filter(item => !item.closed_at);
 
-        let information = result.items.map(item => {
+        let information = openOnes.map(item => {
             let type = this.issueOrPR(item);
             let repo = this.issueRepo(item);
             let labels = item.labels.map(label => `:${label.name.replace(":", "-")}:`).join(" ");
@@ -73,7 +73,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
             };
         });
 
-        let closedInformation = result.items.map(item => {
+        let closedInformation = closedOnes.map(item => {
             let type = this.issueOrPR(item);
             let repo = this.issueRepo(item);
             let labels = item.labels.map(label => `:${label.name.replace(":", "-")}:`).join(" ");
