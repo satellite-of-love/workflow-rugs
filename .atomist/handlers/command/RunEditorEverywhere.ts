@@ -4,9 +4,17 @@ import { Pattern } from '@atomist/rug/operations/RugOperation';
 import { Repo } from '@atomist/cortex/Repo';
 
 /**
- * A sample Rug TypeScript command handler.
+ * Run an editor on all our projects.
+ * To use this, write an editor that you want to run everywhere.
+ * The editor should detect when the project it's looking at isn't
+ * one it understands, and not make any changes.
+ * 
+ * The editor must have no parameters.
+ * 
+ * The editor needs to be in a rug archive listed in this project's
+ * dependencies.
  */
-@CommandHandler("RunEditorEverywhere", "list stuff that is my job to fix")
+@CommandHandler("RunEditorEverywhere", "Run one editor on all repos in satellite-of-love")
 @Tags("workflow", "satellite-of-love", "rug")
 @Intent("org-wide edit")
 export class RunEditorEverywhere implements HandleCommand {
@@ -33,7 +41,7 @@ export class RunEditorEverywhere implements HandleCommand {
 
         // match (ct: ChatTeam { name: "satellite-of-love" } ) - [:OWNS] - (gh: Org) - [:HAS] - (r: Repo) return r
 
-        pxe.with<Repo>(command.contextRoot, "/ChatTeam()/Org()/Repo()", r => {
+        pxe.with<Repo>(command.contextRoot, "/orgs::Org()/repo::Repo()", r => {
             plan.add(new ResponseMessage(`Running ${this.editorName} on ${r.name}`))
             plan.add({
                 instruction: {
