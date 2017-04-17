@@ -21,7 +21,7 @@ export class RunEditorEverywhere implements HandleCommand {
 
     @Parameter({
         displayName: "rug archive holding this generator",
-        description: "workflow-rugs or rest-service-generator",
+        description: "workflow-rugs, rest-service-generator, atomist-k8-specs",
         pattern: Pattern.project_name,
         validInput: "workflow-rugs or rest-service-generator"
     })
@@ -52,7 +52,7 @@ export class RunEditorEverywhere implements HandleCommand {
                             artifact: this.rugArchive
                         }, project: r.name
                 },
-                onSuccess: new ResponseMessage("Created PR on " + r.name),
+                onSuccess: new ResponseMessage("Ran on " + r.name),
                 onError: new ResponseMessage("Failed to edit " + r.name)
             });
         });
