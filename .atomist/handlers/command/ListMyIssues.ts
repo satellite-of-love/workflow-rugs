@@ -20,15 +20,14 @@ class ListMyIssues implements HandleCommand {
     handle(ctx: HandlerContext): Plan {
         let plan = new Plan();
 
-        let user = "jessitron";
+        let user = "jessitron"
         let userMatch = ctx.pathExpressionEngine.evaluate<ChatTeam, GitHubId>(
             ctx.contextRoot as ChatTeam,
             `/members::ChatId()[@id='${this.user}']/person::Person()/gitHubId::GitHubId()`);
         if (userMatch && userMatch.matches && userMatch.matches()[0].login) {
-            console.log("Finding issues for " + userMatch.matches()[0].login);
-            user = userMatch.matches[0];
+            console.log("Finding issues for " + userMatch.matches()[0].login)
+            user = userMatch.matches[0]
         }
-        plan.add(new ResponseMessage(`Looking up issues assigned to ${user}`))
 
         let org = "satellite-of-love";
 
