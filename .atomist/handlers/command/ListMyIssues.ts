@@ -2,8 +2,6 @@ import { HandleCommand, MappedParameters, MessageMimeTypes, Response, HandleResp
 import { EventHandler, ResponseHandler, ParseJson, CommandHandler, Secrets, MappedParameter, Parameter, Tags, Intent } from '@atomist/rug/operations/Decorators'
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
-import { ChatTeam } from '@atomist/cortex/ChatTeam';
-import { GitHubId } from '@atomist/cortex/GitHubId';
 
 /**
  * A sample Rug TypeScript command handler.
@@ -14,23 +12,13 @@ import { GitHubId } from '@atomist/cortex/GitHubId';
 @Secrets("github://user_token?scopes=repo")
 class ListMyIssues implements HandleCommand {
 
-    @MappedParameter(MappedParameters.SLACK_USER)
-    user: string;
+    // TODO: accept user; use path expression to get GitHub login.
 
     handle(command: HandlerContext): Plan {
         let plan = new Plan();
 
-        let pxe = command.pathExpressionEngine;
-
-        let match = pxe.scalar<ChatTeam, GitHubId>(command.contextRoot as ChatTeam,
-            `/members::ChatId()[@id='${this.user}']/person::Person()/gitHubId::GitHubId()`);
-
-        let user = "jessitron";
-        if (match && match.login) {
-            console.log(match.login);
-            user = match.login;
-        }
-        let org = "satellite-of-love";
+        let user = "jessitron"
+        let org = "satellite-of-love"
 
         const base = `https://api.github.com/search/issues`;
 
