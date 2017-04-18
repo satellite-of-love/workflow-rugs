@@ -64,19 +64,13 @@ class ReceiveMyIssues implements HandleResponse<any> {
             let repo = this.issueRepo(item);
             let labels = item.labels.map(label => `:${label.name.replace(":", "-")}:`).join(" ");
 
-            let slack: any = {
+            return {
                 "mrkdwn_in": ["text"],
-                "color": "#3D9900",
+                "color": "#3D9900", 
                 "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
                 "text": `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
                 "fallback": item.html_url
             };
-
-            if (this.not_long_ago(item.created_at)) {
-                slack.thumb_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png"
-            }
-
-            return slack;
         });
 
         let closedInformation = closedOnes.map(item => {
@@ -90,8 +84,6 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
                 "text": `${labels} created ${this.timeSince(item.created_at)}, closed ${this.timeSince(item.closed_at)}`,
                 "fallback": item.html_url
-                , "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Checked_icon.png"
-
             };
         });
 
@@ -134,7 +126,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
         return "pr";
     }
 
-    private timeSince(dateString: string) {
+    private timeSince(dateString : string) {
         if (dateString == null) {
             return "never";
         }
@@ -154,7 +146,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
             return `${Math.round(secondsPast / 86400)}d ago`;
         }
         else {
-            return dateString.substr(0, 10);
+            return dateString.substr(0,10);
         }
     }
 }
