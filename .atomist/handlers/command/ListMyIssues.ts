@@ -17,18 +17,19 @@ class ListMyIssues implements HandleCommand {
     @MappedParameter(MappedParameters.SLACK_USER)
     user: string;
 
-    handle(ctx: HandlerContext): Plan {
+    handle(command: HandlerContext): Plan {
         let plan = new Plan();
 
-        let user = "jessitron"
-        let userMatch = ctx.pathExpressionEngine.evaluate<ChatTeam, GitHubId>(
-            ctx.contextRoot as ChatTeam,
-            `/members::ChatId()[@id='${this.user}']/person::Person()/gitHubId::GitHubId()`);
-        if (userMatch && userMatch.matches && userMatch.matches()[0].login) {
-            console.log("Finding issues for " + userMatch.matches()[0].login)
-            user = userMatch.matches[0]
-        }
+        let pxe = command.pathExpressionEngine;
 
+        let match = pxe.scalar<ChatTeam, GitHubId>(command.contextRoot as ChatTeam,
+            `/members::ChatId()[@id='${this.user}']/person::Person()/gitHubId::GitHubId()`);
+
+        let user = "jessitron";
+        if (match && match.login) {
+            console.log(match.login);
+            user = match.login;
+        }
         let org = "satellite-of-love";
 
         const base = `https://api.github.com/search/issues`;
