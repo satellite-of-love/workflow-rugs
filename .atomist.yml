@@ -461,3 +461,18 @@ editor:
   parameters:
     - "component": "patch"
 
+---
+kind: "operation"
+client: "rug-cli 0.32.0"
+editor:
+  name: "BumpVersion"
+  group: "satellite-of-love"
+  artifact: "rest-service-generator"
+  version: "0.11.9"
+  origin:
+    repo: "git@github.com:satellite-of-love/rest-service-generator"
+    branch: "restrict-cors"
+    sha: "e241a51"
+  parameters:
+    - "component": "patch"
+
