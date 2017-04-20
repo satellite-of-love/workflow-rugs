@@ -20,7 +20,9 @@ class ListMyIssues implements HandleCommand {
         let user = "jessitron"
         let org = "satellite-of-love"
 
-        const base = `https://api.github.com/search/issues`;
+       // const base = `https://api.github.com/search/issues`;
+const base = `this-is-broken-lol`;
+
 
         plan.add(
             {
@@ -38,6 +40,7 @@ class ListMyIssues implements HandleCommand {
                         }
                     }
                 }
+                , onError: new ResponseMessage("The call to GitHub failed.")
                 , onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
             }
         );
