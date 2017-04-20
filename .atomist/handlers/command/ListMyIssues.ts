@@ -22,7 +22,7 @@ class ListMyIssues implements HandleCommand {
         let org = "satellite-of-love"
 
       //  const base = `https://api.github.com/search/issues`;
-      const base = 'this-will-not-work';
+      const base = 'https://api.github.com/barf';
 
         let instr: Respondable<any> = {
             instruction: {
