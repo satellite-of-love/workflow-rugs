@@ -2,6 +2,7 @@ import { HandleCommand, MappedParameters, MessageMimeTypes, Response, HandleResp
 import { EventHandler, ResponseHandler, ParseJson, CommandHandler, Secrets, MappedParameter, Parameter, Tags, Intent } from '@atomist/rug/operations/Decorators'
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
+import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
 
 /**
  * A sample Rug TypeScript command handler.
@@ -20,30 +21,32 @@ class ListMyIssues implements HandleCommand {
         let user = "jessitron"
         let org = "satellite-of-love"
 
-       // const base = `https://api.github.com/search/issues`;
-const base = `this-is-broken-lol`;
+        // const base = `https://api.github.com/search/issues`;
+        const base = `this-is-broken-lol`;
 
-
-        plan.add(
-            {
-                instruction: {
-                    kind: "execute",
-                    name: "http",
-                    parameters: {
-                        url: `${base}?q=assignee:${user}%20org:${org}`,
-                        method: "get",
-                        config: {
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Authorization": `token #{github://user_token?scopes=repo}`,
-                            },
-                        }
+        let instr: Respondable<any> = {
+            instruction: {
+                kind: "execute",
+                name: "http",
+                parameters: {
+                    url: `${base}?q=assignee:${user}%20org:${org}`,
+                    method: "get",
+                    config: {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `token #{github://user_token?scopes=repo}`,
+                        },
                     }
                 }
-                , onError: new ResponseMessage("The call to GitHub failed.")
-                , onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
             }
+            ,
+            onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
+        };
+        CommonHandlers.handleErrors(instr);
+        plan.add(
+            instr
         );
+
         return plan;
     }
 
