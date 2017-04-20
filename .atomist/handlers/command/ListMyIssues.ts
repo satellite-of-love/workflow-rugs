@@ -21,7 +21,8 @@ class ListMyIssues implements HandleCommand {
         let user = "jessitron"
         let org = "satellite-of-love"
 
-        const base = `https://api.github.com/search/issues`;
+      //  const base = `https://api.github.com/search/issues`;
+      const base = 'this-will-not-work';
 
         let instr: Respondable<any> = {
             instruction: {
@@ -160,5 +161,6 @@ class ReceiveMyIssues implements HandleResponse<any> {
     }
 }
 
+export const poo = new CommonHandlers.GenericErrorHandler();
 export const received = new ReceiveMyIssues();
 export const listMyIssues = new ListMyIssues();
