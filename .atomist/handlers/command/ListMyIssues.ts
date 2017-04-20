@@ -21,8 +21,7 @@ class ListMyIssues implements HandleCommand {
         let user = "jessitron"
         let org = "satellite-of-love"
 
-        // const base = `https://api.github.com/search/issues`;
-        const base = `this-is-broken-lol`;
+        const base = `https://api.github.com/search/issues`;
 
         let instr: Respondable<any> = {
             instruction: {
@@ -42,10 +41,8 @@ class ListMyIssues implements HandleCommand {
             ,
             onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
         };
-        CommonHandlers.handleErrors(instr);
-        plan.add(
-            instr
-        );
+        CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed"});
+        plan.add(instr);
 
         return plan;
     }
