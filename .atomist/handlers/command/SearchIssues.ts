@@ -84,6 +84,11 @@ class SearchIssues implements HandleCommand {
 
 }
 
+function toEmoji(s: string): string {
+    let validEmojiName = s.replace(":", "-").toLowerCase();
+    return `:${validEmojiName}:`;
+}
+
 @ResponseHandler("ReceiveSearchIssues", "step 2 in ListMyIssues")
 class ReceiveSearchIssues implements HandleResponse<any> {
     @Parameter({ pattern: Pattern.any })
@@ -98,10 +103,10 @@ class ReceiveSearchIssues implements HandleResponse<any> {
         let information = result.items.map(item => {
             let type = this.issueOrPR(item);
             let repo = this.issueRepo(item);
-            let labels = item.labels.map(label => `:${label.name.replace(":", "-")}:`).join(" ");
+            let labels = item.labels.map(label => toEmoji(label.name)).join(" ");
             let assignee = "Unassigned";
             if (item.assignees.size > 0) {
-                assignee = "assigned to " + item.assignees.map(a => `:${a.login.toLowerCase}:`).join(" ");
+                assignee = "assigned to " + item.assignees.map(a => toEmoji(a.login)).join(" ");
             }
 
             let slack: any = {

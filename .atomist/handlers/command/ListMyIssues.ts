@@ -49,6 +49,11 @@ class ListMyIssues implements HandleCommand {
 
 }
 
+function toEmoji(s: string): string {
+    let validEmojiName = s.replace(":", "-").toLowerCase();
+    return `:${validEmojiName}:`;
+}
+
 @ResponseHandler("ReceiveMyIssues", "step 2 in ListMyIssues")
 class ReceiveMyIssues implements HandleResponse<any> {
     handle(response: Response<any>, ): Plan {
@@ -65,7 +70,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
         let information = openOnes.map(item => {
             let type = this.issueOrPR(item);
             let repo = this.issueRepo(item);
-            let labels = item.labels.map(label => `:${label.name.replace(":", "-")}:`).join(" ");
+            let labels = item.labels.map(label => toEmoji(label.name)).join(" ");
 
             let slack: any = {
                 "mrkdwn_in": ["text"],
