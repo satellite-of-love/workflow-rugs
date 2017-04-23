@@ -24,10 +24,17 @@ class SearchIssues implements HandleCommand {
 
     @Parameter({
         pattern: Pattern.any,
-        description: "issues that mention this user",
+        description: "must mention this user (or blank)",
         required: false
     })
-    mentions: string = "me";
+    mentions: string = "";
+
+    @Parameter({
+        pattern: Pattern.any,
+        description: "must be assigned to this github user (or blank)",
+        required: false
+    })
+    assignee: string = "";
 
     @Parameter({
         pattern: Pattern.any,
@@ -47,6 +54,21 @@ class SearchIssues implements HandleCommand {
         if (mentions === "me") {
             mentions = me;
         }
+        let mentionQuery = "";
+        if (mentions !== "") {
+            mentionQuery = `mentions:${mentions}`;
+        }
+
+        let assignee = this.assignee;
+        if (assignee === "me") {
+            assignee = me;
+        }
+
+        let assigneeQuery = "";
+        if (assignee !== "") {
+            assigneeQuery = `assignee:${mentions}`;
+        }
+
         let repoQuery = "";
         if (this.orgRepo !== "") {
             // todo: validate. todo: default the org.
@@ -56,7 +78,7 @@ class SearchIssues implements HandleCommand {
 
         const base = `https://api.github.com/search/issues`;
 
-        let queries = [`mentions:${mentions}`, statusQuery, repoQuery];
+        let queries = [mentionQuery, assigneeQuery, statusQuery, repoQuery].filter(s => s !== "");
 
         let instr: Respondable<any> = {
             instruction: {
