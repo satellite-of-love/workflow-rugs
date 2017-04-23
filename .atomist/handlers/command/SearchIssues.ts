@@ -73,7 +73,7 @@ class SearchIssues implements HandleCommand {
                 }
             }
             ,
-            onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
+            onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: { queryString: queries.join("+") } }
         };
         CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
         plan.add(new ResponseMessage(`Querying github for issues ${queries.join(" ")}`));
@@ -86,6 +86,9 @@ class SearchIssues implements HandleCommand {
 
 @ResponseHandler("ReceiveMyIssues", "step 2 in ListMyIssues")
 class ReceiveMyIssues implements HandleResponse<any> {
+    @Parameter({ pattern: Pattern.any })
+    queryString: string;
+
     handle(response: Response<any>, ): Plan {
 
         let result = JSON.parse(response.body)
@@ -117,7 +120,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
 
         let slack = {
-            text: `There are ${count}`,
+            text: `There are ${count}. Search more on <https://github.com/issues?q=${this.queryString}|Github>`,
             attachments: information
         };
 
