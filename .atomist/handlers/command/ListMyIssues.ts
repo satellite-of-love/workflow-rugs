@@ -3,6 +3,7 @@ import { EventHandler, ResponseHandler, ParseJson, CommandHandler, Secrets, Mapp
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
 import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
+import { toEmoji } from './SlackEmoji';
 
 /**
  * A sample Rug TypeScript command handler.
@@ -41,17 +42,12 @@ class ListMyIssues implements HandleCommand {
             ,
             onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
         };
-        CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed"});
+        CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
         plan.add(instr);
 
         return plan;
     }
 
-}
-
-function toEmoji(s: string): string {
-    let validEmojiName = s.replace(":", "-").toLowerCase();
-    return `:${validEmojiName}:`;
 }
 
 @ResponseHandler("ReceiveMyIssues", "step 2 in ListMyIssues")

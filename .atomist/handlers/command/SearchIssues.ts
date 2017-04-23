@@ -3,6 +3,7 @@ import { EventHandler, ResponseHandler, ParseJson, CommandHandler, Secrets, Mapp
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
 import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
+import { toEmoji } from './SlackEmoji';
 
 /**
  * A sample Rug TypeScript command handler.
@@ -84,10 +85,6 @@ class SearchIssues implements HandleCommand {
 
 }
 
-function toEmoji(s: string): string {
-    let validEmojiName = s.replace(":", "-").toLowerCase();
-    return `:${validEmojiName}:`;
-}
 
 @ResponseHandler("ReceiveSearchIssues", "step 2 in ListMyIssues")
 class ReceiveSearchIssues implements HandleResponse<any> {
