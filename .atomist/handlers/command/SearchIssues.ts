@@ -66,7 +66,7 @@ class SearchIssues implements HandleCommand {
 
         let assigneeQuery = "";
         if (assignee !== "") {
-            assigneeQuery = `assignee:${mentions}`;
+            assigneeQuery = `assignee:${assignee}`;
         }
 
         let repoQuery = "";
