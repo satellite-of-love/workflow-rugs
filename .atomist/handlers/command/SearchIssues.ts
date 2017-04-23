@@ -4,6 +4,13 @@ import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
 import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
 import { toEmoji } from './SlackEmoji';
+import * as seedrandom from 'seedrandom/seedrandom';
+
+function randomHexColor(id:string):string {
+    let rnd = new seedrandom.alea(id);
+    console.log(rnd());
+    return "FF00FF";
+}
 
 /**
  * A sample Rug TypeScript command handler.
