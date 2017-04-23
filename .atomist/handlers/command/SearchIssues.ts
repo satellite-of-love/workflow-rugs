@@ -49,18 +49,20 @@ class SearchIssues implements HandleCommand {
         let repoQuery = "";
         if (this.orgRepo !== "") {
             // todo: validate. todo: default the org.
-            repoQuery = `%20repo:${this.orgRepo}`;
+            repoQuery = `repo:${this.orgRepo}`;
         }
-        let statusQuery = `%20is:${this.status}`;
+        let statusQuery = `is:${this.status}`;
 
         const base = `https://api.github.com/search/issues`;
+
+        let queries = [`mentions:${mentions}`, statusQuery, repoQuery];
 
         let instr: Respondable<any> = {
             instruction: {
                 kind: "execute",
                 name: "http",
                 parameters: {
-                    url: `${base}?q=mentions:${mentions}${statusQuery}${repoQuery}`,
+                    url: `${base}?q=${queries.join("%20")}`,
                     method: "get",
                     config: {
                         headers: {
@@ -74,6 +76,7 @@ class SearchIssues implements HandleCommand {
             onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
         };
         CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
+        plan.add(new ResponseMessage(`Querying github for issues ${queries.join(" ")}`));
         plan.add(instr);
 
         return plan;
