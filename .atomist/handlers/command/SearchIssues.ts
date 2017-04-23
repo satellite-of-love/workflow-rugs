@@ -7,19 +7,51 @@ import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
 /**
  * A sample Rug TypeScript command handler.
  */
-@CommandHandler("ListMyIssues", "Show my issues, the way I want to see them")
+@CommandHandler("SearchIssues", "Personal issue search, cross-org")
 @Tags("satellite-of-love", "github")
-@Intent("list my issues")
+@Intent("search issues")
 @Secrets("github://user_token?scopes=repo")
-class ListMyIssues implements HandleCommand {
+class SearchIssues implements HandleCommand {
+
+    @Parameter({
+        pattern: Pattern.any,
+        displayName: "repo",
+        description: "org/repo, or blank for all",
+        required: false
+    })
+    orgRepo: string = "";
+
+    @Parameter({
+        pattern: Pattern.any,
+        description: "issues that mention this user",
+        required: false
+    })
+    mentions: string = "me";
+
+    @Parameter({
+        pattern: Pattern.any,
+        description: "status: open, closed, merged",
+        required: false
+    })
+    status: string = "open";
 
     // TODO: accept user; use path expression to get GitHub login.
 
     handle(command: HandlerContext): Plan {
         let plan = new Plan();
 
-        let user = "jessitron"
+        let me = "jessitron"
         let org = "satellite-of-love"
+        let mentions = this.mentions;
+        if (mentions === "me") {
+            mentions = me;
+        }
+        let repoQuery = "";
+        if (this.orgRepo !== "") {
+            // todo: validate. todo: default the org.
+            repoQuery = `%20repo:${this.orgRepo}`;
+        }
+        let statusQuery = `%20is:${this.status}`;
 
         const base = `https://api.github.com/search/issues`;
 
@@ -28,7 +60,7 @@ class ListMyIssues implements HandleCommand {
                 kind: "execute",
                 name: "http",
                 parameters: {
-                    url: `${base}?q=assignee:${user}%20org:${org}`,
+                    url: `${base}?q=mentions:${mentions}${statusQuery}${repoQuery}`,
                     method: "get",
                     config: {
                         headers: {
@@ -41,7 +73,7 @@ class ListMyIssues implements HandleCommand {
             ,
             onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
         };
-        CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed"});
+        CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
         plan.add(instr);
 
         return plan;
@@ -55,23 +87,23 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
         let result = JSON.parse(response.body)
 
-
         let count = result.total_count;
 
-        //TODO: in the search string, ignore ones closed a long time ago so we don't get to many.
-        let closedOnes = result.items.filter(item => this.not_long_ago(item.closed_at));
-        let openOnes = result.items.filter(item => !item.closed_at);
-
-        let information = openOnes.map(item => {
+        let information = result.items.map(item => {
             let type = this.issueOrPR(item);
             let repo = this.issueRepo(item);
             let labels = item.labels.map(label => `:${label.name.replace(":", "-")}:`).join(" ");
+            let assignee = "Unassigned";
+            if (item.assignees.size > 0) {
+                assignee = "assigned to " + item.assignees.map(a => `:${a.login.toLowerCase}:`).join(" ");
+            }
 
             let slack: any = {
                 "mrkdwn_in": ["text"],
-                "color": "#3D9900",
+                "color": "#3079a4", // this is random. Todo: make it literally random, seeded on issue id. fun :-)
+                "author_name": assignee,
                 "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
-                "text": `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
+                "text": `${labels} created ${this.timeSince(item.created_at)} by :${item.user.login}:, updated ${this.timeSince(item.updated_at)}`,
                 "fallback": item.html_url
             };
             if (this.not_long_ago(item.created_at)) {
@@ -80,25 +112,10 @@ class ReceiveMyIssues implements HandleResponse<any> {
             return slack;
         });
 
-        let closedInformation = closedOnes.map(item => {
-            let type = this.issueOrPR(item);
-            let repo = this.issueRepo(item);
-            let labels = item.labels.map(label => `:${label.name.replace(":", "-")}:`).join(" ");
-
-            return {
-                "mrkdwn_in": ["text"],
-                "color": "#0066FF",
-                "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
-                "text": `${labels} created ${this.timeSince(item.created_at)}, closed ${this.timeSince(item.closed_at)}`,
-                "fallback": item.html_url,
-                "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Checked_icon.png"
-
-            };
-        });
 
         let slack = {
-            text: `You have ${information.length} things going`,
-            attachments: closedInformation.concat(information)
+            text: `There are ${count}`,
+            attachments: information
         };
 
         let plan = Plan.ofMessage(new ResponseMessage(JSON.stringify(slack), MessageMimeTypes.SLACK_JSON));
@@ -161,4 +178,4 @@ class ReceiveMyIssues implements HandleResponse<any> {
 }
 
 export const received = new ReceiveMyIssues();
-export const listMyIssues = new ListMyIssues();
+export const searchIssues = new SearchIssues();
