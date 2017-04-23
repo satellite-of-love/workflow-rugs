@@ -73,7 +73,7 @@ class SearchIssues implements HandleCommand {
                 }
             }
             ,
-            onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: { queryString: queries.join("+") } }
+            onSuccess: { kind: "respond", name: "ReceiveSearchIssues", parameters: { queryString: queries.join("+") } }
         };
         CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
         plan.add(new ResponseMessage(`Querying github for issues ${queries.join(" ")}`));
@@ -84,8 +84,8 @@ class SearchIssues implements HandleCommand {
 
 }
 
-@ResponseHandler("ReceiveMyIssues", "step 2 in ListMyIssues")
-class ReceiveMyIssues implements HandleResponse<any> {
+@ResponseHandler("ReceiveSearchIssues", "step 2 in ListMyIssues")
+class ReceiveSearchIssues implements HandleResponse<any> {
     @Parameter({ pattern: Pattern.any })
     queryString: string;
 
@@ -183,5 +183,5 @@ class ReceiveMyIssues implements HandleResponse<any> {
     }
 }
 
-export const received = new ReceiveMyIssues();
+export const received = new ReceiveSearchIssues();
 export const searchIssues = new SearchIssues();
