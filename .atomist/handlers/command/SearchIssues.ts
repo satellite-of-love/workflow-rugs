@@ -4,12 +4,16 @@ import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
 import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
 import { toEmoji } from './SlackEmoji';
-import * as seedrandom from 'seedrandom/seedrandom';
+import { MersenneTwister } from './MersenneTwister';
 
-function randomHexColor(id:string):string {
-    let rnd = new seedrandom.alea(id);
-    console.log(rnd());
-    return "FF00FF";
+function randomHexColor(id: string): string {
+    
+    let rnd = new MersenneTwister(id);
+    let n = rnd.random();
+    console.log("A random number: " + n);
+    let h = '#'+Math.floor(n*16777215).toString(16);
+    console.log("A random color: " + h);
+    return h;
 }
 
 /**
@@ -55,6 +59,12 @@ class SearchIssues implements HandleCommand {
     handle(command: HandlerContext): Plan {
         let plan = new Plan();
 
+        console.log("number 1")
+        let m = new MersenneTwister("foo");
+        console.log("number 2")
+        let r = m.random();
+        console.log("number 3")
+
         let me = "jessitron"
         let org = "satellite-of-love"
         let mentions = this.mentions;
@@ -86,6 +96,10 @@ class SearchIssues implements HandleCommand {
         const base = `https://api.github.com/search/issues`;
 
         let queries = [mentionQuery, assigneeQuery, statusQuery, repoQuery].filter(s => s !== "");
+        if (queries === [statusQuery]) {
+            return Plan.ofMessage(new ResponseMessage(
+                `I don't want to query all ${this.status} issues on GitHub. Try adding \`--assignee me\` or \`--orgRepo satellite-of-love/workflow-rugs\``));
+        }
 
         let instr: Respondable<any> = {
             instruction: {
@@ -137,7 +151,7 @@ class ReceiveSearchIssues implements HandleResponse<any> {
 
             let slack: any = {
                 "mrkdwn_in": ["text"],
-                "color": "#3079a4", // this is random. Todo: make it literally random, seeded on issue id. fun :-)
+                "color": randomHexColor(`${item.url}`), // this is random. Todo: make it literally random, seeded on issue id. fun :-)
                 "author_name": assignee,
                 "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
                 "text": `${labels} created ${this.timeSince(item.created_at)} by :${item.user.login}:, updated ${this.timeSince(item.updated_at)}`,
