@@ -138,7 +138,7 @@ Moved from ${issueToMove.html_url}`;
                 }
             }
             ,
-            onSuccess: { kind: "respond", name: "ReceiveMovedIssue", parameters: { fromUrl: issueToMove.url, fromHtmlUrl: issueToMove.html_url } }
+            onSuccess: { kind: "respond", name: "ReceiveMovedIssue", parameters: { fromUrl: issueToMove.url } }
         };
         CommonHandlers.handleErrors(createIssueInstruction, { msg: "The new-issue post to GitHub failed" });
         plan.add(createIssueInstruction);
@@ -153,15 +153,12 @@ class ReceiveMovedIssue implements HandleResponse<any> {
     @Parameter({ pattern: Pattern.any })
     fromUrl: string;
 
-    @Parameter({ pattern: Pattern.any })
-    fromHtmlUrl: string;
-
     handle(response: Response<any>): Plan {
         let plan = new Plan();
         let newIssue = JSON.parse(response.body);
         plan.add(new ResponseMessage(`Commenting on original issue`))
 
-        let comment = `Moved to ${this.fromHtmlUrl}`;
+        let comment = `Moved to ${newIssue.html_url}`;
 
         const url = `${this.fromUrl}/comments`;
 
