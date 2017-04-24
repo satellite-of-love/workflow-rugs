@@ -103,17 +103,24 @@ class ReceiveIssueToMove implements HandleResponse<any> {
         }
         // should I refuse to move PRs?
 
+
+        const url = `https://api.github.com/repos/${this.toOrg}/${this.toRepo}/issues`;
+
         plan.add(new ResponseMessage(`Creating issue in ${this.toOrg}/${this.toRepo}`))
+
+        let comment = `Moved from ${issueToMove.html_url}`;
+         if (linkingFromPublicToPrivate(url, comment)) {
+            comment = `Moved from internal`;
+        }
 
         let title = issueToMove.title;
         let body = `${issueToMove.body}
         
-Moved from ${issueToMove.html_url}`;
+${comment}`;
         let assignees = issueToMove.assignees.map(f => f.login);
         let labels = issueToMove.labels.map(l => l.name);
 
 
-        const url = `https://api.github.com/repos/${this.toOrg}/${this.toRepo}/issues`;
 
         let createIssueInstruction: Respondable<any> = {
             instruction: {
@@ -147,6 +154,10 @@ Moved from ${issueToMove.html_url}`;
     }
 }
 
+function linkingFromPublicToPrivate(postedAt: string, linkingTo: string) {
+    return (linkingTo.indexOf("/atomisthq/") >= 0) && (postedAt.indexOf("/atomisthq/") < 0);
+}
+
 @ResponseHandler("ReceiveMovedIssue", "step 3 in MoveIssue")
 @Secrets("github://user_token?scopes=repo")
 class ReceiveMovedIssue implements HandleResponse<any> {
@@ -158,7 +169,11 @@ class ReceiveMovedIssue implements HandleResponse<any> {
         let newIssue = JSON.parse(response.body);
         plan.add(new ResponseMessage(`Commenting on original issue`))
 
+
         let comment = `Moved to ${newIssue.html_url}`;
+        if (linkingFromPublicToPrivate(this.fromUrl, comment)) {
+            comment = `Moved to internal`;
+        }
 
         const url = `${this.fromUrl}/comments`;
 
