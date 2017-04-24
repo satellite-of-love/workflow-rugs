@@ -20,6 +20,14 @@
     "@atomist/rug" "0.25.1"
     mustache "^2.3.0"
 
+"camelcase@github:jessitron/camelcase":
+  version "5.1.0"
+  resolved "https://codeload.github.com/jessitron/camelcase/tar.gz/2e4c6aa0f3e22c9d25b3033ffeb3af72d08d4a25"
+
 mustache@^2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/mustache/-/mustache-2.3.0.tgz#4028f7778b17708a489930a6e52ac3bca0da41d0"
+
+random-js@^1.0.8:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/random-js/-/random-js-1.0.8.tgz#968fd689a6f25d6c0aac766283de2f688c9c190a"

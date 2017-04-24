@@ -4,16 +4,19 @@ import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
 import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
 import { toEmoji } from './SlackEmoji';
-import { MersenneTwister } from './MersenneTwister';
+import * as Random from 'random-js';
+import { camelCase } from 'camelcase/CamelCase';
 
 function randomHexColor(id: string): string {
     
-    let rnd = new MersenneTwister(id);
-    let n = rnd.random();
-    console.log("A random number: " + n);
-    let h = '#'+Math.floor(n*16777215).toString(16);
-    console.log("A random color: " + h);
-    return h;
+    let mt = new Random.engines.mt19937();
+    mt.seed(id);
+    let n = Math.abs(mt());
+    let h = '#'+Math.floor(n % 16777215).toString(16).substr(0, 6);
+    while (h.length < 6) {
+        h = "0" + h; // cheap leftpad
+    }
+   return h;
 }
 
 /**
@@ -58,12 +61,6 @@ class SearchIssues implements HandleCommand {
 
     handle(command: HandlerContext): Plan {
         let plan = new Plan();
-
-        console.log("number 1")
-        let m = new MersenneTwister("foo");
-        console.log("number 2")
-        let r = m.random();
-        console.log("number 3")
 
         let me = "jessitron"
         let org = "satellite-of-love"
@@ -124,6 +121,7 @@ class SearchIssues implements HandleCommand {
         plan.add(instr);
 
         return plan;
+     
     }
 
 }
@@ -151,7 +149,7 @@ class ReceiveSearchIssues implements HandleResponse<any> {
 
             let slack: any = {
                 "mrkdwn_in": ["text"],
-                "color": randomHexColor(`${item.url}`), // this is random. Todo: make it literally random, seeded on issue id. fun :-)
+                "color": randomHexColor(`${item.url}`),
                 "author_name": assignee,
                 "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
                 "text": `${labels} created ${this.timeSince(item.created_at)} by :${item.user.login}:, updated ${this.timeSince(item.updated_at)}`,
