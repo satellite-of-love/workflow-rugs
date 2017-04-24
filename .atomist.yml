@@ -643,3 +643,18 @@ editor:
     - "description": "mark an issue as in-progress"
     - "intent": "start work"
 
+---
+kind: "operation"
+client: "rug-cli 0.33.3"
+editor:
+  name: "BumpVersion"
+  group: "satellite-of-love"
+  artifact: "rest-service-generator"
+  version: "0.11.9"
+  origin:
+    repo: "git@github.com:satellite-of-love/rest-service-generator"
+    branch: "restrict-cors"
+    sha: "e241a51"
+  parameters:
+    - "component": "patch"
+
