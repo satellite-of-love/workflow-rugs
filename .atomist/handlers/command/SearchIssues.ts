@@ -7,11 +7,12 @@ import { toEmoji } from './SlackEmoji';
 import * as Random from 'random-js';
 import { camelCase } from 'camelcase/CamelCase';
 
-function randomHexColor(id: string): string {
+function randomHexColor(id: number): string {
     
     let mt = new Random.engines.mt19937();
     mt.seed(id);
     let n = Math.abs(mt());
+    console.log(`Random number ${n} from seed ${id}`)
     let h = '#'+Math.floor(n % 16777215).toString(16).substr(0, 6);
     while (h.length < 6) {
         h = "0" + h; // cheap leftpad
@@ -149,7 +150,7 @@ class ReceiveSearchIssues implements HandleResponse<any> {
 
             let slack: any = {
                 "mrkdwn_in": ["text"],
-                "color": randomHexColor(`${item.url}`),
+                "color": randomHexColor(item.id),
                 "author_name": assignee,
                 "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
                 "text": `${labels} created ${this.timeSince(item.created_at)} by :${item.user.login}:, updated ${this.timeSince(item.updated_at)}`,
