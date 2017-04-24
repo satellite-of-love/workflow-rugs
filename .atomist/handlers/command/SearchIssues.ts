@@ -12,7 +12,6 @@ function randomHexColor(id: number): string {
     let mt = new Random.engines.mt19937();
     mt.seed(id);
     let n = Math.abs(mt());
-    console.log(`Random number ${n} from seed ${id}`)
     let h = '#'+Math.floor(n % 16777215).toString(16).substr(0, 6);
     while (h.length < 6) {
         h = "0" + h; // cheap leftpad
