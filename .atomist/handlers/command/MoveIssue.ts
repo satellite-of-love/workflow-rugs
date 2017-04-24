@@ -76,7 +76,7 @@ function parseOrgRepo(orgRepo: string, defaultOrg: string): OrgAndRepo {
     let parts = orgRepo.split("/")
     let repo = parts[0];
     if (parts.length > 1) {
-        org = repo[0];
+        org = parts[0];
         repo = parts[1];
     }
 
