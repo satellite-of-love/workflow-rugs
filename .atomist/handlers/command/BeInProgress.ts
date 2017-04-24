@@ -1,28 +1,31 @@
-import { HandleCommand, HandlerContext, ResponseMessage, Plan } from '@atomist/rug/operations/Handlers';
-import { CommandHandler, Parameter, Tags, Intent } from '@atomist/rug/operations/Decorators';
+import { HandleCommand, HandlerContext, MappedParameters, ResponseMessage, Plan } from '@atomist/rug/operations/Handlers';
+import { CommandHandler, Parameter, MappedParameter, Tags, Intent } from '@atomist/rug/operations/Decorators';
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 
 /**
  * A mark an issue as in-progress.
  */
 @CommandHandler("BeInProgress", "mark an issue as in-progress")
-@Tags("documentation")
+@Tags("issue", "satellite-of-love", "workflow")
 @Intent("start work")
 export class BeInProgress implements HandleCommand {
 
+    @MappedParameter(MappedParameters.GITHUB_REPOSITORY)
+    repo: string;
+
+    @MappedParameter(MappedParameters.SLACK_USER)
+    user: string;
+
     @Parameter({
-        displayName: "Some Input",
-        description: "example of how to specify a parameter using decorators",
+        displayName: "Issue Number",
+        description: "issue number",
         pattern: Pattern.any,
-        validInput: "a description of the valid input",
-        minLength: 1,
-        maxLength: 100,
-        required: false
+        validInput: "an issue number"
     })
-    inputParameter: string = "default value";
+    issue: string;
 
     handle(command: HandlerContext): Plan {
-        let message = new ResponseMessage(`Successfully ran BeInProgress: ${this.inputParameter}`);
+        let message = new ResponseMessage(`Starting work by <@${this.user}> on ${this.repo}#${this.issue}`);
         return Plan.ofMessage(message);
     }
 }
