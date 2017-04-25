@@ -1,4 +1,4 @@
-import { HandleCommand, HandlerContext, MappedParameters, ResponseMessage, Plan } from '@atomist/rug/operations/Handlers';
+import { HandleCommand, HandlerContext, MappedParameters, ResponseMessage, CommandPlan } from '@atomist/rug/operations/Handlers';
 import { CommandHandler, Parameter, MappedParameter, Tags, Intent } from '@atomist/rug/operations/Decorators';
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import { ChatTeam } from '@atomist/cortex/ChatTeam';
@@ -26,8 +26,8 @@ export class BeInProgress implements HandleCommand {
     })
     issue: string;
 
-    handle(command: HandlerContext): Plan {
-        let plan = new Plan();
+    handle(command: HandlerContext): CommandPlan {
+        let plan = new CommandPlan();
 
         let ghId = githubLoginFromSlackUser(command, this.user);
         let login: string;

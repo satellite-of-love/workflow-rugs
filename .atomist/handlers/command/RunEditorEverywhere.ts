@@ -1,4 +1,4 @@
-import { HandleCommand, HandlerContext, ResponseMessage, Plan } from '@atomist/rug/operations/Handlers';
+import { HandleCommand, HandlerContext, ResponseMessage, CommandPlan } from '@atomist/rug/operations/Handlers';
 import { CommandHandler, Parameter, MappedParameter, Tags, Intent } from '@atomist/rug/operations/Decorators';
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import { Repo } from '@atomist/cortex/Repo';
@@ -35,9 +35,9 @@ export class RunEditorEverywhere implements HandleCommand {
     })
     editorName: string;
 
-    handle(command: HandlerContext): Plan {
+    handle(command: HandlerContext): CommandPlan {
         let pxe = command.pathExpressionEngine;
-        let plan = new Plan();
+        let plan = new CommandPlan();
 
         // match (ct: ChatTeam { name: "satellite-of-love" } ) - [:OWNS] - (gh: Org) - [:HAS] - (r: Repo) return r
 

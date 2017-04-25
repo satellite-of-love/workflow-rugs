@@ -1,7 +1,8 @@
-import { HandleCommand, HandlerContext, MappedParameters, Response, HandleResponse, ResponseMessage, Plan, Respondable } from '@atomist/rug/operations/Handlers';
+import { HandleCommand, HandlerContext, MappedParameters, Response, HandleResponse, ResponseMessage, CommandPlan } from '@atomist/rug/operations/Handlers';
 import { CommandHandler, ResponseHandler, Parameter, MappedParameter, Tags, Secrets, Intent } from '@atomist/rug/operations/Decorators';
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
+import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
 
 /**
  * A move an issue from one repo to another.
@@ -34,8 +35,8 @@ export class MoveIssue implements HandleCommand {
     })
     issue: string;
 
-    handle(command: HandlerContext): Plan {
-        let plan = new Plan();
+    handle(command: HandlerContext): CommandPlan {
+        let plan = new CommandPlan();
         let to = parseOrgRepo(this.toOrgRepo, this.fromOrg)
 
         let message = new ResponseMessage(`Moving issue: ${this.fromOrg}/${this.fromRepo}#${this.issue} to ${this.toOrgRepo}`);
@@ -43,24 +44,19 @@ export class MoveIssue implements HandleCommand {
 
         const url = `https://api.github.com/repos/${this.fromOrg}/${this.fromRepo}/issues/${this.issue}`;
 
-        let retrieveIssueInstruction: Respondable<any> = {
-            instruction: {
-                kind: "execute",
-                name: "http",
-                parameters: {
-                    url: url,
-                    method: "get",
-                    config: {
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `token #{github://user_token?scopes=repo}`,
-                        },
-                    }
+        let retrieveIssueInstruction = PlanUtils.execute("http",
+            {
+                url: url,
+                method: "get",
+                config: {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `token #{github://user_token?scopes=repo}`,
+                    },
                 }
-            }
-            ,
-            onSuccess: { kind: "respond", name: "ReceiveIssueToMove", parameters: { toOrg: to.org, toRepo: to.repo } }
-        };
+            });
+        retrieveIssueInstruction.onSuccess = { kind: "respond", name: "ReceiveIssueToMove", parameters: { toOrg: to.org, toRepo: to.repo } }
+
         CommonHandlers.handleErrors(retrieveIssueInstruction, { msg: "The request to GitHub failed" });
         plan.add(retrieveIssueInstruction);
 
@@ -93,8 +89,8 @@ class ReceiveIssueToMove implements HandleResponse<any> {
     @Parameter({ pattern: Pattern.any })
     toRepo: string;
 
-    handle(response: Response<any>): Plan {
-        let plan = new Plan();
+    handle(response: Response<any>): CommandPlan {
+        let plan = new CommandPlan();
         let issueToMove = JSON.parse(response.body);
 
         if (issueToMove.state === "closed") {
@@ -115,31 +111,26 @@ Moved from ${issueToMove.html_url}`;
 
         const url = `https://api.github.com/repos/${this.toOrg}/${this.toRepo}/issues`;
 
-        let createIssueInstruction: Respondable<any> = {
-            instruction: {
-                kind: "execute",
-                name: "http",
-                parameters: {
-                    url: url,
-                    method: "post",
-                    config: {
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `token #{github://user_token?scopes=repo}`,
-                        },
+        let createIssueInstruction = PlanUtils.execute("http",
+            {
+                url: url,
+                method: "post",
+                config: {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `token #{github://user_token?scopes=repo}`,
+                    },
 
-                        body: JSON.stringify({
-                            title: title,
-                            body: body,
-                            assignees: assignees,
-                            labels: labels
-                        })
-                    }
+                    body: JSON.stringify({
+                        title: title,
+                        body: body,
+                        assignees: assignees,
+                        labels: labels
+                    })
                 }
-            }
-            ,
-            onSuccess: { kind: "respond", name: "ReceiveMovedIssue", parameters: { fromUrl: issueToMove.url } }
-        };
+            });
+        createIssueInstruction.onSuccess = { kind: "respond", name: "ReceiveMovedIssue", parameters: { fromUrl: issueToMove.url } }
+
         CommonHandlers.handleErrors(createIssueInstruction, { msg: "The new-issue post to GitHub failed" });
         plan.add(createIssueInstruction);
 
@@ -153,8 +144,8 @@ class ReceiveMovedIssue implements HandleResponse<any> {
     @Parameter({ pattern: Pattern.any })
     fromUrl: string;
 
-    handle(response: Response<any>): Plan {
-        let plan = new Plan();
+    handle(response: Response<any>): CommandPlan {
+        let plan = new CommandPlan();
         let newIssue = JSON.parse(response.body);
         plan.add(new ResponseMessage(`Commenting on original issue`))
 
@@ -162,30 +153,25 @@ class ReceiveMovedIssue implements HandleResponse<any> {
 
         const url = `${this.fromUrl}/comments`;
 
-        let createIssueInstruction: Respondable<any> = {
-            instruction: {
-                kind: "execute",
-                name: "http",
-                parameters: {
-                    url: url,
-                    method: "post",
-                    config: {
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `token #{github://user_token?scopes=repo}`,
-                        },
+        let commentInstruction = PlanUtils.execute("http",
+            {
+                url: url,
+                method: "post",
+                config: {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `token #{github://user_token?scopes=repo}`,
+                    },
 
-                        body: JSON.stringify({
-                            body: comment
-                        })
-                    }
+                    body: JSON.stringify({
+                        body: comment
+                    })
                 }
-            }
-            ,
-            onSuccess: { kind: "respond", name: "ReceiveCommentedOnOriginalIssue", parameters: { fromUrl: this.fromUrl, toHtmlUrl: newIssue.html_url } }
-        };
-        CommonHandlers.handleErrors(createIssueInstruction, { msg: "The comment post to GitHub failed" });
-        plan.add(createIssueInstruction);
+            });
+        commentInstruction.onSuccess = { kind: "respond", name: "ReceiveCommentedOnOriginalIssue", parameters: { fromUrl: this.fromUrl, toHtmlUrl: newIssue.html_url } }
+
+        CommonHandlers.handleErrors(commentInstruction, { msg: "The comment post to GitHub failed" });
+        plan.add(commentInstruction);
 
         return plan;
     }
@@ -201,37 +187,32 @@ class ReceiveCommentedOnOriginalIssue implements HandleResponse<any> {
     @Parameter({ pattern: Pattern.any })
     toHtmlUrl: string;
 
-    handle(response: Response<any>): Plan {
-        let plan = new Plan();
+    handle(response: Response<any>): CommandPlan {
+        let plan = new CommandPlan();
         let newIssue = JSON.parse(response.body);
         plan.add(new ResponseMessage(`Closing original issue`))
 
         const url = this.fromUrl;
 
-        let createIssueInstruction: Respondable<any> = {
-            instruction: {
-                kind: "execute",
-                name: "http",
-                parameters: {
-                    url: url,
-                    method: "post",
-                    config: {
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `token #{github://user_token?scopes=repo}`,
-                        },
+        let closeIssueInstruction = PlanUtils.execute("http",
+            {
+                url: url,
+                method: "post",
+                config: {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `token #{github://user_token?scopes=repo}`,
+                    },
 
-                        body: JSON.stringify({
-                            state: "closed"
-                        })
-                    }
+                    body: JSON.stringify({
+                        state: "closed"
+                    })
                 }
-            }
-            ,
-            onSuccess: new ResponseMessage(`Done! <${this.toHtmlUrl}|New issue created>`)
-        };
-        CommonHandlers.handleErrors(createIssueInstruction, { msg: "The close-issue patch to GitHub failed" });
-        plan.add(createIssueInstruction);
+            });
+        closeIssueInstruction.onSuccess = new ResponseMessage(`Done! <${this.toHtmlUrl}|New issue created>`)
+
+        CommonHandlers.handleErrors(closeIssueInstruction, { msg: "The close-issue patch to GitHub failed" });
+        plan.add(closeIssueInstruction);
 
         return plan;
     }

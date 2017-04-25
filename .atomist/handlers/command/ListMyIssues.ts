@@ -1,4 +1,4 @@
-import { HandleCommand, MappedParameters, MessageMimeTypes, Response, HandleResponse, HandlerContext, ResponseMessage, Respondable, Plan } from '@atomist/rug/operations/Handlers';
+import { HandleCommand, CommandRespondable, MappedParameters, MessageMimeTypes, Response, HandleResponse, HandlerContext, ResponseMessage, CommandPlan, Execute } from '@atomist/rug/operations/Handlers';
 import { EventHandler, ResponseHandler, ParseJson, CommandHandler, Secrets, MappedParameter, Parameter, Tags, Intent } from '@atomist/rug/operations/Decorators'
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
@@ -16,32 +16,27 @@ class ListMyIssues implements HandleCommand {
 
     // TODO: accept user; use path expression to get GitHub login.
 
-    handle(command: HandlerContext): Plan {
-        let plan = new Plan();
+    handle(command: HandlerContext): CommandPlan {
+        let plan = new CommandPlan();
 
         let user = "jessitron"
         let org = "satellite-of-love"
 
         const base = `https://api.github.com/search/issues`;
 
-        let instr: Respondable<any> = {
-            instruction: {
-                kind: "execute",
-                name: "http",
-                parameters: {
-                    url: `${base}?q=assignee:${user}%20org:${org}`,
-                    method: "get",
-                    config: {
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `token #{github://user_token?scopes=repo}`,
-                        },
-                    }
+        let instr = PlanUtils.execute("http",
+            {
+                url: `${base}?q=assignee:${user}%20org:${org}`,
+                method: "get",
+                config: {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `token #{github://user_token?scopes=repo}`,
+                    },
                 }
             }
-            ,
-            onSuccess: { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
-        };
+        );
+        instr.onSuccess = { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
         CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
         plan.add(instr);
 
@@ -52,7 +47,7 @@ class ListMyIssues implements HandleCommand {
 
 @ResponseHandler("ReceiveMyIssues", "step 2 in ListMyIssues")
 class ReceiveMyIssues implements HandleResponse<any> {
-    handle(response: Response<any>, ): Plan {
+    handle(response: Response<any>, ): CommandPlan {
 
         let result = JSON.parse(response.body)
 
@@ -102,7 +97,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
             attachments: closedInformation.concat(information)
         };
 
-        let plan = Plan.ofMessage(new ResponseMessage(JSON.stringify(slack), MessageMimeTypes.SLACK_JSON));
+        let plan = CommandPlan.ofMessage(new ResponseMessage(JSON.stringify(slack), MessageMimeTypes.SLACK_JSON));
 
         return plan;
     }

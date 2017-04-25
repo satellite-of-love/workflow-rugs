@@ -1,4 +1,4 @@
-import { HandleCommand, MappedParameters, MessageMimeTypes, Response, HandleResponse, HandlerContext, ResponseMessage, Respondable, Plan } from '@atomist/rug/operations/Handlers';
+import { HandleCommand, MappedParameters, MessageMimeTypes, Response, HandleResponse, HandlerContext, ResponseMessage, CommandPlan } from '@atomist/rug/operations/Handlers';
 import { EventHandler, ResponseHandler, ParseJson, CommandHandler, Secrets, MappedParameter, Parameter, Tags, Intent } from '@atomist/rug/operations/Decorators'
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
@@ -8,15 +8,15 @@ import * as Random from 'random-js';
 import { camelCase } from 'camelcase/CamelCase';
 
 function randomHexColor(id: number): string {
-    
+
     let mt = new Random.engines.mt19937();
     mt.seed(id);
     let n = Math.abs(mt());
-    let h = '#'+Math.floor(n % 16777215).toString(16).substr(0, 6);
+    let h = '#' + Math.floor(n % 16777215).toString(16).substr(0, 6);
     while (h.length < 6) {
         h = "0" + h; // cheap leftpad
     }
-   return h;
+    return h;
 }
 
 /**
@@ -59,8 +59,8 @@ class SearchIssues implements HandleCommand {
 
     // TODO: accept user; use path expression to get GitHub login.
 
-    handle(command: HandlerContext): Plan {
-        let plan = new Plan();
+    handle(command: HandlerContext): CommandPlan {
+        let plan = new CommandPlan();
 
         let me = "jessitron"
         let org = "satellite-of-love"
@@ -94,34 +94,30 @@ class SearchIssues implements HandleCommand {
 
         let queries = [mentionQuery, assigneeQuery, statusQuery, repoQuery].filter(s => s !== "");
         if (queries === [statusQuery]) {
-            return Plan.ofMessage(new ResponseMessage(
+            return CommandPlan.ofMessage(new ResponseMessage(
                 `I don't want to query all ${this.status} issues on GitHub. Try adding \`--assignee me\` or \`--orgRepo satellite-of-love/workflow-rugs\``));
         }
 
-        let instr: Respondable<any> = {
-            instruction: {
-                kind: "execute",
-                name: "http",
-                parameters: {
-                    url: `${base}?q=${queries.join("%20")}`,
-                    method: "get",
-                    config: {
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `token #{github://user_token?scopes=repo}`,
-                        },
-                    }
+        let instr = PlanUtils.execute("http",
+            {
+                url: `${base}?q=${queries.join("%20")}`,
+                method: "get",
+                config: {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `token #{github://user_token?scopes=repo}`,
+                    },
                 }
             }
-            ,
-            onSuccess: { kind: "respond", name: "ReceiveSearchIssues", parameters: { queryString: queries.join("+") } }
-        };
+        );
+        instr.onSuccess = { kind: "respond", name: "ReceiveSearchIssues", parameters: { queryString: queries.join("+") } }
+
         CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
         plan.add(new ResponseMessage(`Querying github for issues ${queries.join(" ")}`));
         plan.add(instr);
 
         return plan;
-     
+
     }
 
 }
@@ -132,7 +128,7 @@ class ReceiveSearchIssues implements HandleResponse<any> {
     @Parameter({ pattern: Pattern.any })
     queryString: string;
 
-    handle(response: Response<any>, ): Plan {
+    handle(response: Response<any>, ): CommandPlan {
 
         let result = JSON.parse(response.body)
 
@@ -167,7 +163,7 @@ class ReceiveSearchIssues implements HandleResponse<any> {
             attachments: information
         };
 
-        let plan = Plan.ofMessage(new ResponseMessage(JSON.stringify(slack), MessageMimeTypes.SLACK_JSON));
+        let plan = CommandPlan.ofMessage(new ResponseMessage(JSON.stringify(slack), MessageMimeTypes.SLACK_JSON));
 
         return plan;
     }
