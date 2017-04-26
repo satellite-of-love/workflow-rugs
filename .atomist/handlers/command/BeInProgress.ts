@@ -1,5 +1,5 @@
 import { HandleCommand, HandlerContext, MappedParameters, ResponseMessage, CommandPlan } from '@atomist/rug/operations/Handlers';
-import { CommandHandler, Parameter, MappedParameter, Tags, Intent } from '@atomist/rug/operations/Decorators';
+import { CommandHandler, Parameter, MappedParameter, Tags, Intent, Secrets } from '@atomist/rug/operations/Decorators';
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import { ChatTeam } from '@atomist/cortex/ChatTeam';
 import { GitHubId } from '@atomist/cortex/stub/GitHubId';
@@ -13,6 +13,7 @@ import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
 @CommandHandler("BeInProgress", "mark an issue as in-progress")
 @Tags("issue", "satellite-of-love", "workflow")
 @Intent("start work")
+@Secrets("github://user_token?scopes=repo")
 export class BeInProgress implements HandleCommand {
 
     @MappedParameter(MappedParameters.GITHUB_REPO_OWNER)
@@ -46,30 +47,56 @@ export class BeInProgress implements HandleCommand {
         }
 
         plan.add(addLabelToIssue(this.owner, this.repo, this.issue, "in-progress"))
+        plan.add(addAssigneeToIssue(this.owner, this.repo, this.issue, login))
 
         return plan;
     }
 }
 
 function addLabelToIssue(owner: string, repo: string, issue: string, labelName: string) {
-     const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issue}/labels`;
+    const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issue}/labels`;
 
-        let instr = PlanUtils.execute("http",
-            {
-                url: url,
-                method: "post",
-                config: {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `token #{github://user_token?scopes=repo}`,
-                    },
-                    body: JSON.stringify([labelName])
-                }
-            });
-        instr.onSuccess = new ResponseMessage(`Added ${labelName} label`)
-        CommonHandlers.handleErrors(instr, { msg: "The add-label request to GitHub failed" });
-        return instr;
-        
+    let instr = PlanUtils.execute("http",
+        {
+            url: url,
+            method: "post",
+            config: {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `token #{github://user_token?scopes=repo}`,
+                },
+                body: JSON.stringify([labelName])
+            }
+        });
+    instr.onSuccess = new ResponseMessage(`Added ${labelName} label`)
+    CommonHandlers.handleErrors(instr, { msg: "The add-label request to GitHub failed" });
+    return instr;
+
+}
+
+function addAssigneeToIssue(owner: string, repo: string, issue: string, login: string) {
+    const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issue}/assignees`;
+
+    let instr = PlanUtils.execute("http",
+        {
+            url: url,
+            method: "post",
+            config: {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `token #{github://user_token?scopes=repo}`,
+                },
+                body: JSON.stringify({
+                    "assignees": [
+                        login
+                    ]
+                })
+            }
+        });
+    instr.onSuccess = new ResponseMessage(`Assigned ${login}`)
+    CommonHandlers.handleErrors(instr, { msg: "The assign request to GitHub failed" });
+    return instr;
+
 }
 
 function success(pet: GitHubId | Sadness): pet is GitHubId {
@@ -81,34 +108,35 @@ interface Sadness {
 }
 
 function githubLoginFromSlackUser(context: HandlerContext, slackUser: string): GitHubId | Sadness {
-    if (1 > 0) { 
-//TODO: take this out when bug is fixed and the below works
-       return new GitHubId().withLogin("jessitron");
-   
-    } else {
-    let userMatch = context.pathExpressionEngine.evaluate<ChatTeam, GitHubId>(context.contextRoot as ChatTeam,
-        `/members::ChatId()[@id='${slackUser}']/person::Person()/gitHubId::GitHubId()`);
+    if (1 > 0) {
+        //TODO: take this out when bug is fixed and the below works
+        return new GitHubId().withLogin("jessitron");
 
-    if (userMatch == null) {
-        return { error: "null result" }
-    }
-    let matches = userMatch.matches();
-    if (matches.length == 0) {
-        return { error: "empty result" }
-    }
-    if (matches.length == 1) {
-        // happy path
-        return matches[0];
-    }
-    if (matches.length > 1) {
-        console.log(`Warning: got #{userMatch.matches().length} github logins`)
-        let firstLogin = matches[0].login;
-        if (matches.every(n => n.login === firstLogin)) {
-            console.log("It's OK, they're all the same")
+    } else {
+        let userMatch = context.pathExpressionEngine.evaluate<ChatTeam, GitHubId>(context.contextRoot as ChatTeam,
+            `/members::ChatId()[@id='${slackUser}']/person::Person()/gitHubId::GitHubId()`);
+
+        if (userMatch == null) {
+            return { error: "null result" }
+        }
+        let matches = userMatch.matches();
+        if (matches.length == 0) {
+            return { error: "empty result" }
+        }
+        if (matches.length == 1) {
+            // happy path
             return matches[0];
         }
-        return { error: "Multiple different github logins returned: " + matches.map(f => f.login).join(",") }
-    }}
+        if (matches.length > 1) {
+            console.log(`Warning: got #{userMatch.matches().length} github logins`)
+            let firstLogin = matches[0].login;
+            if (matches.every(n => n.login === firstLogin)) {
+                console.log("It's OK, they're all the same")
+                return matches[0];
+            }
+            return { error: "Multiple different github logins returned: " + matches.map(f => f.login).join(",") }
+        }
+    }
 }
 
 export const errors = new CommonHandlers.GenericErrorHandler();
