@@ -48,6 +48,7 @@ export class BeInProgress implements HandleCommand {
 
         plan.add(addLabelToIssue(this.owner, this.repo, this.issue, "in-progress"))
         plan.add(addAssigneeToIssue(this.owner, this.repo, this.issue, login))
+// TODO: remove this label from all other issues assigned to me
 
         return plan;
     }
