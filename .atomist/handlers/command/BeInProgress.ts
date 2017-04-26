@@ -3,6 +3,8 @@ import { CommandHandler, Parameter, MappedParameter, Tags, Intent } from '@atomi
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import { ChatTeam } from '@atomist/cortex/ChatTeam';
 import { GitHubId } from '@atomist/cortex/GitHubId';
+import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
+import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
 
 /**
  * A mark an issue as in-progress.
@@ -11,6 +13,9 @@ import { GitHubId } from '@atomist/cortex/GitHubId';
 @Tags("issue", "satellite-of-love", "workflow")
 @Intent("start work")
 export class BeInProgress implements HandleCommand {
+
+    @MappedParameter(MappedParameters.GITHUB_REPO_OWNER)
+    owner: string
 
     @MappedParameter(MappedParameters.GITHUB_REPOSITORY)
     repo: string;
@@ -38,8 +43,32 @@ export class BeInProgress implements HandleCommand {
             plan.add(new ResponseMessage(`Unable to determine github login for <@${this.user}>: ${ghId.error}`));
             return plan;
         }
+
+        plan.add(addLabelToIssue(this.owner, this.repo, this.issue, "in-progress"))
+
         return plan;
     }
+}
+
+function addLabelToIssue(owner: string, repo: string, issue: string, labelName: string) {
+     const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issue}/labels`;
+
+        let instr = PlanUtils.execute("http",
+            {
+                url: url,
+                method: "post",
+                config: {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `token #{github://user_token?scopes=repo}`,
+                    },
+                    body: JSON.stringify([labelName])
+                }
+            });
+        instr.onSuccess = new ResponseMessage(`Added ${labelName} label`)
+        CommonHandlers.handleErrors(instr, { msg: "The add-label request to GitHub failed" });
+        return instr;
+        
 }
 
 function success(pet: GitHubId | Sadness): pet is GitHubId {
@@ -76,4 +105,5 @@ function githubLoginFromSlackUser(context: HandlerContext, slackUser: string): G
     }
 }
 
+export const errors = new CommonHandlers.GenericErrorHandler();
 export const beInProgress = new BeInProgress();
