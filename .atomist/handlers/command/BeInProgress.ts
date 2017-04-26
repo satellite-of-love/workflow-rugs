@@ -2,7 +2,8 @@ import { HandleCommand, HandlerContext, MappedParameters, ResponseMessage, Comma
 import { CommandHandler, Parameter, MappedParameter, Tags, Intent } from '@atomist/rug/operations/Decorators';
 import { Pattern } from '@atomist/rug/operations/RugOperation';
 import { ChatTeam } from '@atomist/cortex/ChatTeam';
-import { GitHubId } from '@atomist/cortex/GitHubId';
+import { GitHubId } from '@atomist/cortex/stub/GitHubId';
+import { Person } from '@atomist/cortex/stub/Person';
 import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
 import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
 
@@ -80,6 +81,11 @@ interface Sadness {
 }
 
 function githubLoginFromSlackUser(context: HandlerContext, slackUser: string): GitHubId | Sadness {
+    if (1 > 0) { 
+//TODO: take this out when bug is fixed and the below works
+       return new GitHubId().withLogin("jessitron");
+   
+    } else {
     let userMatch = context.pathExpressionEngine.evaluate<ChatTeam, GitHubId>(context.contextRoot as ChatTeam,
         `/members::ChatId()[@id='${slackUser}']/person::Person()/gitHubId::GitHubId()`);
 
@@ -102,7 +108,7 @@ function githubLoginFromSlackUser(context: HandlerContext, slackUser: string): G
             return matches[0];
         }
         return { error: "Multiple different github logins returned: " + matches.map(f => f.login).join(",") }
-    }
+    }}
 }
 
 export const errors = new CommonHandlers.GenericErrorHandler();
