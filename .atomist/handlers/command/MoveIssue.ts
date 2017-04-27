@@ -149,29 +149,49 @@ class ReceiveMovedIssue implements HandleResponse<any> {
         let newIssue = JSON.parse(response.body);
         plan.add(new ResponseMessage(`Commenting on original issue`))
 
-        let comment = `Moved to ${newIssue.html_url}`;
+        {
+            let comment = `Moved to ${newIssue.html_url}`;
 
-        const url = `${this.fromUrl}/comments`;
+            const url = `${this.fromUrl}/comments`;
 
-        let commentInstruction = PlanUtils.execute("http",
-            {
-                url: url,
-                method: "post",
-                config: {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `token #{github://user_token?scopes=repo}`,
-                    },
+            let commentInstruction = PlanUtils.execute("http",
+                {
+                    url: url,
+                    method: "post",
+                    config: {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `token #{github://user_token?scopes=repo}`,
+                        },
 
-                    body: JSON.stringify({
-                        body: comment
-                    })
-                }
-            });
-        commentInstruction.onSuccess = { kind: "respond", name: "ReceiveCommentedOnOriginalIssue", parameters: { fromUrl: this.fromUrl, toHtmlUrl: newIssue.html_url } }
+                        body: JSON.stringify({
+                            body: comment
+                        })
+                    }
+                });
+            commentInstruction.onSuccess = { kind: "respond", name: "ReceiveCommentedOnOriginalIssue", parameters: { fromUrl: this.fromUrl, toHtmlUrl: newIssue.html_url } }
+            CommonHandlers.handleErrors(commentInstruction, { msg: "The comment post to GitHub failed" });
+            plan.add(commentInstruction);
+        }
 
-        CommonHandlers.handleErrors(commentInstruction, { msg: "The comment post to GitHub failed" });
-        plan.add(commentInstruction);
+        { // remove any status labels from the issue
+            const url = `${this.fromUrl}/labels/in-progress`;
+
+            let commentInstruction = PlanUtils.execute("http",
+                {
+                    url: url,
+                    method: "delete",
+                    config: {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `token #{github://user_token?scopes=repo}`,
+                        }
+                    }
+                });
+            commentInstruction.onSuccess = { kind: "respond", name: "ReceiveCommentedOnOriginalIssue", parameters: { fromUrl: this.fromUrl, toHtmlUrl: newIssue.html_url } }
+            CommonHandlers.handleErrors(commentInstruction, { msg: "The comment post to GitHub failed" });
+            plan.add(commentInstruction);
+        }
 
         return plan;
     }
