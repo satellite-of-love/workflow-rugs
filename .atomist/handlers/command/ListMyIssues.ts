@@ -8,11 +8,11 @@ import { toEmoji } from './SlackEmoji';
 /**
  * A sample Rug TypeScript command handler.
  */
-@CommandHandler("ListMyIssues", "Show my issues, the way I want to see them")
+@CommandHandler("StuffInProgress", "Show my in-progress issues, the way I want to see them")
 @Tags("satellite-of-love", "github")
-@Intent("list my issues")
+@Intent("what am i doing")
 @Secrets("github://user_token?scopes=repo")
-class ListMyIssues implements HandleCommand {
+class StuffInProgress implements HandleCommand {
 
     // TODO: accept user; use path expression to get GitHub login.
 
@@ -70,9 +70,6 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 "text": `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
                 "fallback": item.html_url
             };
-            if (this.not_long_ago(item.created_at)) {
-                slack.thumb_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png"
-            }
             return slack;
         });
 
@@ -86,9 +83,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 "color": "#0066FF",
                 "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
                 "text": `${labels} created ${this.timeSince(item.created_at)}, closed ${this.timeSince(item.closed_at)}`,
-                "fallback": item.html_url,
-                "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Checked_icon.png"
-
+                "fallback": item.html_url
             };
         });
 
@@ -157,4 +152,4 @@ class ReceiveMyIssues implements HandleResponse<any> {
 }
 
 export const received = new ReceiveMyIssues();
-export const listMyIssues = new ListMyIssues();
+export const stuffInProgress = new StuffInProgress();
