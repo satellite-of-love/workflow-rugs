@@ -10,7 +10,7 @@ import { toEmoji } from './SlackEmoji';
  */
 @CommandHandler("StuffInProgress", "Show my in-progress issues, the way I want to see them")
 @Tags("satellite-of-love", "github")
-@Intent("what am i doing")
+@Intent("list my issues")
 @Secrets("github://user_token?scopes=repo")
 class StuffInProgress implements HandleCommand {
 
