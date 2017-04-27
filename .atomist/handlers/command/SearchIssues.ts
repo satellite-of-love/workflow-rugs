@@ -139,8 +139,10 @@ class ReceiveSearchIssues implements HandleResponse<any> {
             let repo = this.issueRepo(item);
             let labels = item.labels.map(label => toEmoji(label.name)).join(" ");
             let assignee = "Unassigned";
-            if (item.assignees.size() > 0) {
+            if (item.assignees.size > 0) {
                 assignee = "assigned to " + item.assignees.map(a => toEmoji(a.login)).join(" ");
+            } else if (item.assignee != null) {
+                assignee = "assigned to " + toEmoji(item.assignee.login)
             }
 
             let slack: any = {
