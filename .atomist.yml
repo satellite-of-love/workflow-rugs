@@ -868,3 +868,18 @@ editor:
   parameters:
     - "component": "patch"
 
+---
+kind: "operation"
+client: "rug-cli 0.34.0"
+editor:
+  name: "BumpVersion"
+  group: "satellite-of-love"
+  artifact: "rest-service-generator"
+  version: "0.12.9"
+  origin:
+    repo: "git@github.com:satellite-of-love/rest-service-generator"
+    branch: "master"
+    sha: "e09b9e2"
+  parameters:
+    - "component": "patch"
+
