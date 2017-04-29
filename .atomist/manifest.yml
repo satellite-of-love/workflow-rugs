@@ -1,7 +1,7 @@
 group: "satellite-of-love"
 artifact: "workflow-rugs"
-version: "0.2.9"
-requires: "[0.26.1,1.0.0)"
+version: "1.0.0"
+requires: "[1.0.0-m.2,2.0.0)"
 dependencies: 
   - "satellite-of-love:rest-service-generator:[0.11.8,1.0.0)"
   - "satellite-of-love:atomist-k8-specs:[0.1.0,1.0.0)"
