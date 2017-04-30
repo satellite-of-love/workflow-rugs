@@ -36,15 +36,7 @@ export class BeComplete implements HandleCommand {
     handle(command: HandlerContext): CommandPlan {
         let plan = new CommandPlan();
 
-        let ghId = githubLoginFromSlackUser(command, this.user);
-        let login: string;
-        if (success(ghId)) {
-            plan.add(new ResponseMessage(`Starting work by <@${this.user}> (id is ${this.user}, github login ${ghId.login}) on ${this.repo}#${this.issue}`));
-            login = ghId.login;
-        } else {
-            plan.add(new ResponseMessage(`Unable to determine github login for <@${this.user}>: ${ghId.error}`));
-            return plan;
-        }
+        plan.add(new ResponseMessage(`Stopping work on ${this.repo}#${this.issue}`));      
 
         plan.add(removeLabelFromIssue(this.owner, this.repo, this.issue, "in-progress"))
         plan.add(closeIssue(this.owner, this.repo, this.issue))
