@@ -117,7 +117,7 @@ function githubLoginFromSlackUser(context: HandlerContext, slackUser: string): G
         if (userMatch == null) {
             return { error: "null result" }
         }
-        let matches = userMatch.matches();
+        let matches = userMatch.matches;
         if (matches.length == 0) {
             return { error: "empty result" }
         }
