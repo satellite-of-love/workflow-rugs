@@ -8,9 +8,9 @@ import { toEmoji } from './SlackEmoji';
 /**
  * A sample Rug TypeScript command handler.
  */
-@CommandHandler("StuffInProgress", "Show my in-progress issues, the way I want to see them")
+@CommandHandler("StuffInProgress", "Show my in-progress issues and branches, the way I want to see them")
 @Tags("satellite-of-love", "github")
-@Intent("list my issues")
+@Intent("what am I doing?")
 @Secrets("github://user_token?scopes=repo")
 class StuffInProgress implements HandleCommand {
 
