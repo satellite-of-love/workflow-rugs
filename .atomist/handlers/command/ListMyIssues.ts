@@ -83,7 +83,8 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 "color": "#0066FF",
                 "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
                 "text": `${labels} created ${this.timeSince(item.created_at)}, closed ${this.timeSince(item.closed_at)}`,
-                "fallback": item.html_url
+                "fallback": item.html_url,
+                "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Checked_icon.png"
             };
         });
 
