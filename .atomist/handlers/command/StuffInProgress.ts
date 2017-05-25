@@ -70,6 +70,9 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 "text": `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
                 "fallback": item.html_url
             };
+            if (this.not_long_ago(item.created_at)) {
+                slack.thumb_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png"
+            }
             return slack;
         });
 
