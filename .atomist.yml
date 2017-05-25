@@ -971,3 +971,17 @@ editor:
   parameters:
     - "component": "patch"
 
+---
+kind: "operation"
+client: "com.atomist:rug"
+version: "1.0.0-20170518094744"
+editor:
+  name: "UpdateRug"
+  group: "atomist"
+  artifact: "rug-rugs"
+  version: "0.30.1"
+  origin:
+    repo: "https://github.com/atomist/rug-rugs.git"
+    branch: "4babf5df7ea909f42b0390b5c38fb8d3632b810d"
+    sha: "4babf5d"
+
