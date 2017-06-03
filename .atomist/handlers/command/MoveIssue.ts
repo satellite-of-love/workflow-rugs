@@ -238,7 +238,6 @@ class ReceiveCommentedOnOriginalIssue implements HandleResponse<any> {
     }
 }
 
-export const genericErrorHandler = new CommonHandlers.GenericErrorHandler();
 export const receiveCommented = new ReceiveCommentedOnOriginalIssue();
 export const receiveIssueToMove = new ReceiveIssueToMove();
 export const receiveMovedIssue = new ReceiveMovedIssue();

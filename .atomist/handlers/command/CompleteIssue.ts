@@ -36,11 +36,11 @@ export class BeComplete implements HandleCommand {
     handle(command: HandlerContext): CommandPlan {
         let plan = new CommandPlan();
 
-        plan.add(new ResponseMessage(`Stopping work on ${this.repo}#${this.issue}`));      
+        plan.add(new ResponseMessage(`Stopping work on ${this.repo}#${this.issue}`));
 
         plan.add(removeLabelFromIssue(this.owner, this.repo, this.issue, "in-progress"))
         plan.add(closeIssue(this.owner, this.repo, this.issue))
-// TODO: remove this label from all other issues assigned to me
+        // TODO: remove this label from all other issues assigned to me
 
         return plan;
     }
@@ -79,8 +79,8 @@ function closeIssue(owner: string, repo: string, issue: string) {
                     "Authorization": `token #{github://user_token?scopes=repo}`,
                 },
                 body: JSON.stringify({
-                        state: "closed"
-                    })
+                    state: "closed"
+                })
             }
         });
     instr.onSuccess = new ResponseMessage(`#${issue} Closed.`)
@@ -129,5 +129,4 @@ function githubLoginFromSlackUser(context: HandlerContext, slackUser: string): G
     }
 }
 
-export const errors = new CommonHandlers.GenericErrorHandler();
 export const beComplete = new BeComplete();
