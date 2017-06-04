@@ -70,7 +70,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
             const repo = this.issueRepo(item);
             const labels = item.labels.map((label) => toEmoji(label.name)).join(" ");
 
-            const slack: any = {
+            const attachment: any = {
                 mrkdwn_in: ["text"],
                 color: "#3D9900",
                 title: `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
@@ -79,8 +79,10 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 fallback: item.html_url,
             };
             if (this.not_long_ago(item.created_at)) {
-                slack.thumb_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png";
+                attachment.thumb_url =
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png";
             }
+            const slack = { attachments: [attachment] };
             const msg = new ResponseMessage(JSON.stringify(slack),
                 MessageMimeTypes.SLACK_JSON);
             msg.addAction({
