@@ -1,9 +1,16 @@
-import { HandleCommand, CommandRespondable, MappedParameters, MessageMimeTypes, Response, HandleResponse, HandlerContext, ResponseMessage, CommandPlan, Execute } from '@atomist/rug/operations/Handlers';
-import { EventHandler, ResponseHandler, ParseJson, CommandHandler, Secrets, MappedParameter, Parameter, Tags, Intent } from '@atomist/rug/operations/Decorators'
-import { Pattern } from '@atomist/rug/operations/RugOperation';
-import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
-import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
-import { toEmoji } from './SlackEmoji';
+import {
+    CommandHandler, EventHandler, Intent, MappedParameter,
+    Parameter, ParseJson, ResponseHandler, Secrets, Tags,
+} from "@atomist/rug/operations/Decorators";
+import {
+    CommandPlan, CommandRespondable, Execute, HandleCommand,
+    HandlerContext, HandleResponse, MappedParameters, MessageMimeTypes,
+    Response, ResponseMessage,
+} from "@atomist/rug/operations/Handlers";
+import { Pattern } from "@atomist/rug/operations/RugOperation";
+import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
+import * as PlanUtils from "@atomist/rugs/operations/PlanUtils";
+import { toEmoji } from "./SlackEmoji";
 
 /**
  * A sample Rug TypeScript command handler.
@@ -16,15 +23,15 @@ class StuffInProgress implements HandleCommand {
 
     // TODO: accept user; use path expression to get GitHub login.
 
-    handle(command: HandlerContext): CommandPlan {
-        let plan = new CommandPlan();
+    public handle(command: HandlerContext): CommandPlan {
+        const plan = new CommandPlan();
 
-        let user = "jessitron"
-        let org = "satellite-of-love"
+        const user = "jessitron";
+        const org = "satellite-of-love";
 
         const base = `https://api.github.com/search/issues`;
 
-        let instr = PlanUtils.execute("http",
+        const instr = PlanUtils.execute("http",
             {
                 url: `${base}?q=assignee:${user}%20org:${org}`,
                 method: "get",
@@ -33,10 +40,10 @@ class StuffInProgress implements HandleCommand {
                         "Content-Type": "application/json",
                         "Authorization": `token #{github://user_token?scopes=repo}`,
                     },
-                }
-            }
+                },
+            },
         );
-        instr.onSuccess = { kind: "respond", name: "ReceiveMyIssues", parameters: {} }
+        instr.onSuccess = { kind: "respond", name: "ReceiveMyIssues", parameters: {} };
         CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
         plan.add(instr);
 
@@ -47,56 +54,78 @@ class StuffInProgress implements HandleCommand {
 
 @ResponseHandler("ReceiveMyIssues", "step 2 in ListMyIssues")
 class ReceiveMyIssues implements HandleResponse<any> {
-    handle(response: Response<any>, ): CommandPlan {
+    public handle(response: Response<any>): CommandPlan {
 
-        let result = JSON.parse(response.body)
+        const result = JSON.parse(response.body);
 
+        const count = result.total_count;
 
-        let count = result.total_count;
+        // TODO: in the search string, ignore ones closed a long time ago so we don't get to many.
+        const closedOnes = result.items.filter((item) => this.not_long_ago(item.closed_at));
+        const openOnes = result.items.filter((item) => !item.closed_at);
 
-        //TODO: in the search string, ignore ones closed a long time ago so we don't get to many.
-        let closedOnes = result.items.filter(item => this.not_long_ago(item.closed_at));
-        let openOnes = result.items.filter(item => !item.closed_at);
+        // each current one gets its own message with buttons
+        const information = openOnes.map((item) => {
+            const type = this.issueOrPR(item);
+            const repo = this.issueRepo(item);
+            const labels = item.labels.map((label) => toEmoji(label.name)).join(" ");
 
-        let information = openOnes.map(item => {
-            let type = this.issueOrPR(item);
-            let repo = this.issueRepo(item);
-            let labels = item.labels.map(label => toEmoji(label.name)).join(" ");
-
-            let slack: any = {
-                "mrkdwn_in": ["text"],
-                "color": "#3D9900",
-                "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
-                "text": `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
-                "fallback": item.html_url
+            const slack: any = {
+                mrkdwn_in: ["text"],
+                color: "#3D9900",
+                title: `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
+                text:
+                `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
+                fallback: item.html_url,
             };
             if (this.not_long_ago(item.created_at)) {
-                slack.thumb_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png"
+                slack.thumb_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png";
             }
-            return slack;
+            const msg = new ResponseMessage(JSON.stringify(slack),
+                MessageMimeTypes.SLACK_JSON);
+            msg.addAction({
+                instruction: {
+                    kind: "command",
+                    name: {
+                        name: "CloseIssue",
+                        group: "atomist",
+                        artifact: "github-rugs",
+                    },
+                },
+                label: "Done!",
+                id: "CLOSE" + item.html_url,
+            });
+            return msg;
         });
 
-        let closedInformation = closedOnes.map(item => {
-            let type = this.issueOrPR(item);
-            let repo = this.issueRepo(item);
-            let labels = item.labels.map(label => `:${label.name.replace(":", "-")}:`).join(" ");
+        // one message with all the recently closed ones
+        const closedInformation = closedOnes.map((item) => {
+            const type = this.issueOrPR(item);
+            const repo = this.issueRepo(item);
+            const labels = item.labels.map((label) => `:${label.name.replace(":", "-")}:`).join(" ");
 
             return {
-                "mrkdwn_in": ["text"],
-                "color": "#0066FF",
-                "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
-                "text": `${labels} created ${this.timeSince(item.created_at)}, closed ${this.timeSince(item.closed_at)}`,
-                "fallback": item.html_url,
-                "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Checked_icon.png"
+                mrkdwn_in: ["text"],
+                color: "#0066FF",
+                title: `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
+                text: `${labels} created ${this.timeSince(item.created_at)}, closed ${this.timeSince(item.closed_at)}`,
+                fallback: item.html_url,
+                thumb_url: "https://upload.wikimedia.org/wikipedia/commons/9/91/Checked_icon.png",
             };
         });
 
-        let slack = {
+        const slack = {
             text: `You have ${information.length} things going`,
-            attachments: closedInformation.concat(information)
+            attachments: closedInformation,
         };
 
-        let plan = CommandPlan.ofMessage(new ResponseMessage(JSON.stringify(slack), MessageMimeTypes.SLACK_JSON));
+        const plan = CommandPlan.ofMessage(
+            new ResponseMessage(JSON.stringify(slack),
+                MessageMimeTypes.SLACK_JSON));
+
+        information.forEach((msg) => {
+            plan.add(msg);
+        });
 
         return plan;
     }
@@ -106,20 +135,20 @@ class ReceiveMyIssues implements HandleResponse<any> {
             return false;
         }
         let recent = 86400; // a day
-        if (new Date().getDay() == 1) {
+        if (new Date().getDay() === 1) {
             // it is Monday
             recent = recent * 3; // think back to Friday
         }
-        let then = Date.parse(dateString)
-        let now = new Date().getTime();
-        let secondsPast = (now - then) / 1000;
+        const then = Date.parse(dateString);
+        const now = new Date().getTime();
+        const secondsPast = (now - then) / 1000;
 
         return secondsPast < recent;
     }
 
     private issueRepo(item) {
-        let match = /repos\/[A-Za-z0-9_-]+\/([A-Za-z0-9_-]+)\//.exec(item.url);
-        if (match == null) { return item.url }
+        const match = /repos\/[A-Za-z0-9_-]+\/([A-Za-z0-9_-]+)\//.exec(item.url);
+        if (match == null) { return item.url; }
         return match[1];
     }
 
@@ -134,9 +163,9 @@ class ReceiveMyIssues implements HandleResponse<any> {
         if (dateString == null) {
             return "never";
         }
-        let then = Date.parse(dateString)
-        let now = new Date().getTime();
-        let secondsPast = (now - then) / 1000;
+        const then = Date.parse(dateString);
+        const now = new Date().getTime();
+        const secondsPast = (now - then) / 1000;
         if (secondsPast < 60) {
             return `${Math.round(secondsPast)}s ago`;
         }
