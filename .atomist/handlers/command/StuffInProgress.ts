@@ -10,6 +10,8 @@ import {
 import { Pattern } from "@atomist/rug/operations/RugOperation";
 import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
 import * as PlanUtils from "@atomist/rugs/operations/PlanUtils";
+import * as RugMessages from "@atomist/slack-messages/RugMessages";
+import * as SlackMessages from "@atomist/slack-messages/SlackMessages";
 import { toEmoji } from "./SlackEmoji";
 
 /**
@@ -64,7 +66,6 @@ class ReceiveMyIssues implements HandleResponse<any> {
         const closedOnes = result.items.filter((item) => this.not_long_ago(item.closed_at));
         const openOnes = result.items.filter((item) => !item.closed_at);
 
-        // each current one gets its own message with buttons
         const information = openOnes.map((item) => {
             const type = this.issueOrPR(item);
             const repo = this.issueRepo(item);
@@ -77,27 +78,15 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 text:
                 `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
                 fallback: item.html_url,
+                actions: [
+                    SlackMessages.rugButtonFrom({ text: "Close issue" }, closeInstruction(item)),
+                ],
             };
             if (this.not_long_ago(item.created_at)) {
                 attachment.thumb_url =
                     "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png";
             }
-            const slack = { attachments: [attachment] };
-            const msg = new ResponseMessage(JSON.stringify(slack),
-                MessageMimeTypes.SLACK_JSON);
-            msg.addAction({
-                instruction: {
-                    kind: "command",
-                    name: {
-                        name: "CloseIssue",
-                        group: "atomist",
-                        artifact: "github-rugs",
-                    },
-                },
-                label: "Done!",
-                id: "CLOSE" + item.html_url,
-            });
-            return msg;
+            return attachment;
         });
 
         // one message with all the recently closed ones
@@ -118,16 +107,12 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
         const slack = {
             text: `You have ${information.length} things going`,
-            attachments: closedInformation,
+            attachments: closedInformation.concat(information),
         };
 
         const plan = CommandPlan.ofMessage(
-            new ResponseMessage(JSON.stringify(slack),
+            new ResponseMessage(SlackMessages.render(slack),
                 MessageMimeTypes.SLACK_JSON));
-
-        information.forEach((msg) => {
-            plan.add(msg);
-        });
 
         return plan;
     }
@@ -179,11 +164,25 @@ class ReceiveMyIssues implements HandleResponse<any> {
         }
         if (secondsPast <= (86400 * 30)) {
             return `${Math.round(secondsPast / 86400)}d ago`;
-        }
-        else {
+        } else {
             return dateString.substr(0, 10);
         }
     }
+}
+
+function closeInstruction(item) {
+    return {
+        instruction: {
+            kind: "command",
+            name: {
+                name: "CloseIssue",
+                group: "atomist",
+                artifact: "github-rugs",
+                parameters: { issue: item.number },
+            },
+        },
+        id: "CLOSE" + item.html_url,
+    };
 }
 
 export const received = new ReceiveMyIssues();

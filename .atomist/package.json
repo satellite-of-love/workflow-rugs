@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@atomist/rugs": "^1.0.0-m.4",
+    "@atomist/rugs": "^1.0.0-m.5",
     "camelcase": "github:jessitron/camelcase",
     "random-js": "^1.0.8"
   },
