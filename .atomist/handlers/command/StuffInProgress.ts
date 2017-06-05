@@ -105,13 +105,13 @@ class ReceiveMyIssues implements HandleResponse<any> {
             };
         });
 
-        const slack = {
+        const slack = SlackMessages.render({
             text: `You have ${information.length} things going`,
             attachments: closedInformation.concat(information),
-        };
+        }, true);
 
         const plan = CommandPlan.ofMessage(
-            new ResponseMessage(SlackMessages.render(slack),
+            new ResponseMessage(slack,
                 MessageMimeTypes.SLACK_JSON));
 
         return plan;
@@ -181,7 +181,7 @@ function closeInstruction(item) {
                 parameters: { issue: item.number },
             },
         },
-        id: "CLOSE" + item.html_url,
+        //  id: `CLOSE-${item.owner}-${item.repo}-${item.number}`,
     };
 }
 
