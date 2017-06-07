@@ -117,8 +117,8 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
         let msg = new ResponseMessage(slack,
             MessageMimeTypes.SLACK_JSON)
-        closeInstructions.forEach(
-            msg.addAction
+        closeInstructions.forEach((item) =>
+            msg.addAction(item)
         );
 
         const plan = CommandPlan.ofMessage(msg);
