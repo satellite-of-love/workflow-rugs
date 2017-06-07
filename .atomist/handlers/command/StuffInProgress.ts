@@ -24,6 +24,9 @@ import { toEmoji } from "./SlackEmoji";
 @Secrets("github://user_token?scopes=repo")
 class StuffInProgress implements HandleCommand {
 
+    @MappedParameter(MappedParameters.SLACK_CHANNEL)
+    channel: string;
+
     // TODO: accept user; use path expression to get GitHub login.
 
     public handle(command: HandlerContext): CommandPlan {
@@ -186,8 +189,12 @@ function closeInstruction(item): SlackMessages.IdentifiableInstruction & Identif
     const instr: Identifiable<"command"> = {
         instruction: {
             kind: "command",
-            name: "Dammit",
-            parameters: {},
+            name: {
+                name: "CloseGitHubIssue",
+                group: "atomist",
+                artifact: "github-rugs",
+            },
+            parameters: { issue: item.number },
         }
     }
     const identifier: SlackMessages.IdentifiableInstruction = {
@@ -198,6 +205,7 @@ function closeInstruction(item): SlackMessages.IdentifiableInstruction & Identif
         ...identifier
     }
 }
+
 
 @CommandHandler("Dammit", "Do something please")
 @Intent("do something")
