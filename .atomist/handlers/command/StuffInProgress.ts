@@ -6,7 +6,7 @@ import {
     CommandPlan, CommandRespondable, Execute, HandleCommand,
     HandlerContext, HandleResponse, MappedParameters, MessageMimeTypes,
     Response, ResponseMessage, Identifiable, DirectedMessage,
-    ChannelAddress
+    ChannelAddress, Instruction
 } from "@atomist/rug/operations/Handlers";
 import { Pattern } from "@atomist/rug/operations/RugOperation";
 import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
@@ -186,11 +186,11 @@ class ReceiveMyIssues implements HandleResponse<any> {
 }
 
 function closeInstruction(item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
-    const instr = {
+    const instr: Identifiable<"command"> = {
         instruction: {
             kind: "command",
             name: {
-                name: "CloseIssue",
+                name: "CloseGitHubIssue",
                 group: "atomist",
                 artifact: "github-rugs",
             },
