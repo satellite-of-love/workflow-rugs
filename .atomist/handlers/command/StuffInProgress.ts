@@ -125,6 +125,8 @@ class ReceiveMyIssues implements HandleResponse<any> {
             msg.addAction(item)
         );
 
+        console.log("THE MESSAGE SAYS: " + JSON.stringify(msg))
+
         const plan = CommandPlan.ofMessage(msg);
 
         return plan;
