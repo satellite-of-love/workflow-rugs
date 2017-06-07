@@ -7,5 +7,27 @@
   },
   "scripts": {
     "test": "rug test"
+  },
+  "name": "@satellite-of-love/workflow-rugs",
+  "version": "1.10.0",
+  "author": "satellite-of-love",
+  "description": "Atomist Rugs from satellite-of-love/workflow-rugs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/satellite-of-love/workflow-rugs.git"
+  },
+  "homepage": "https://github.com/satellite-of-love/workflow-rugs#readme",
+  "bugs": {
+    "url": "https://github.com/satellite-of-love/workflow-rugs/issues"
+  },
+  "atomist": {
+    "requires": "[1.0.0-m.3,2.0.0)",
+    "dependencies": {
+      "satellite-of-love:rest-service-generator": "[1.0.0,2.0.0)",
+      "satellite-of-love:atomist-k8-specs": "[1.0.0,2.0.0)"
+    },
+    "extensions": {
+      "com.atomist.rug:rug-function-http": "[0.6.1,1.0.0)"
+    }
   }
 }

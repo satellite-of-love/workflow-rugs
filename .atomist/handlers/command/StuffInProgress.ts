@@ -5,7 +5,7 @@ import {
 import {
     CommandPlan, CommandRespondable, Execute, HandleCommand,
     HandlerContext, HandleResponse, MappedParameters, MessageMimeTypes,
-    Response, ResponseMessage,
+    Response, ResponseMessage, Identifiable
 } from "@atomist/rug/operations/Handlers";
 import { Pattern } from "@atomist/rug/operations/RugOperation";
 import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
@@ -66,7 +66,11 @@ class ReceiveMyIssues implements HandleResponse<any> {
         const closedOnes = result.items.filter((item) => this.not_long_ago(item.closed_at));
         const openOnes = result.items.filter((item) => !item.closed_at);
 
-        const information = openOnes.map((item) => {
+        const closeInstructions = openOnes.map((item) =>
+            closeInstruction(item)
+        )
+
+        const information = openOnes.map((item, i) => {
             const type = this.issueOrPR(item);
             const repo = this.issueRepo(item);
             const labels = item.labels.map((label) => toEmoji(label.name)).join(" ");
@@ -79,7 +83,8 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
                 fallback: item.html_url,
                 actions: [
-                    SlackMessages.rugButtonFrom({ text: "Close issue" }, closeInstruction(item)),
+                    SlackMessages.rugButtonFrom({ text: "Close issue" },
+                        closeInstructions[i]),
                 ],
             };
             if (this.not_long_ago(item.created_at)) {
@@ -110,9 +115,13 @@ class ReceiveMyIssues implements HandleResponse<any> {
             attachments: closedInformation.concat(information),
         }, true);
 
-        const plan = CommandPlan.ofMessage(
-            new ResponseMessage(slack,
-                MessageMimeTypes.SLACK_JSON));
+        let msg = new ResponseMessage(slack,
+            MessageMimeTypes.SLACK_JSON)
+        closeInstructions.forEach(
+            msg.addAction
+        );
+
+        const plan = CommandPlan.ofMessage(msg);
 
         return plan;
     }
@@ -170,8 +179,8 @@ class ReceiveMyIssues implements HandleResponse<any> {
     }
 }
 
-function closeInstruction(item) {
-    return {
+function closeInstruction(item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
+    const instr = {
         instruction: {
             kind: "command",
             name: {
@@ -180,9 +189,15 @@ function closeInstruction(item) {
                 artifact: "github-rugs",
                 parameters: { issue: item.number },
             },
-        },
-        //  id: `CLOSE-${item.owner}-${item.repo}-${item.number}`,
-    };
+        }
+    }
+    const identifier: SlackMessages.IdentifiableInstruction = {
+        id: `CLOSE-${item.html_url}`
+    }
+    return {
+        ...instr,
+        ...identifier
+    }
 }
 
 export const received = new ReceiveMyIssues();
