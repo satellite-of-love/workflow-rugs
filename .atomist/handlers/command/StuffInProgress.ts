@@ -5,7 +5,8 @@ import {
 import {
     CommandPlan, CommandRespondable, Execute, HandleCommand,
     HandlerContext, HandleResponse, MappedParameters, MessageMimeTypes,
-    Response, ResponseMessage, Identifiable
+    Response, ResponseMessage, Identifiable, DirectedMessage,
+    ChannelAddress
 } from "@atomist/rug/operations/Handlers";
 import { Pattern } from "@atomist/rug/operations/RugOperation";
 import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
@@ -22,6 +23,9 @@ import { toEmoji } from "./SlackEmoji";
 @Intent("que pasa")
 @Secrets("github://user_token?scopes=repo")
 class StuffInProgress implements HandleCommand {
+
+    @MappedParameter(MappedParameters.SLACK_CHANNEL)
+    channel: string;
 
     // TODO: accept user; use path expression to get GitHub login.
 
@@ -115,7 +119,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
             attachments: closedInformation.concat(information),
         }, true);
 
-        let msg = new ResponseMessage(slack,
+        let msg = new DirectedMessage(slack, new ChannelAddress("general"),
             MessageMimeTypes.SLACK_JSON)
         closeInstructions.forEach((item) =>
             msg.addAction(item)
