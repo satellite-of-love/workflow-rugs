@@ -193,8 +193,8 @@ function closeInstruction(item): SlackMessages.IdentifiableInstruction & Identif
                 name: "CloseIssue",
                 group: "atomist",
                 artifact: "github-rugs",
-                parameters: { issue: item.number },
             },
+            parameters: { issue: item.number },
         }
     }
     const identifier: SlackMessages.IdentifiableInstruction = {
