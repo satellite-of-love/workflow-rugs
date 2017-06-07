@@ -9,7 +9,7 @@
     "test": "rug test"
   },
   "name": "@satellite-of-love/workflow-rugs",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "author": "satellite-of-love",
   "description": "Atomist Rugs from satellite-of-love/workflow-rugs",
   "repository": {
