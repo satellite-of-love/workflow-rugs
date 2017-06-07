@@ -119,7 +119,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
             attachments: closedInformation.concat(information),
         }, true);
 
-        let msg = new DirectedMessage(slack, new ChannelAddress("general"),
+        let msg = new ResponseMessage(slack,
             MessageMimeTypes.SLACK_JSON)
         closeInstructions.forEach((item) =>
             msg.addAction(item)

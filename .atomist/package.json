@@ -24,7 +24,8 @@
     "requires": "[1.0.0-m.3,2.0.0)",
     "dependencies": {
       "satellite-of-love:rest-service-generator": "[1.0.0,2.0.0)",
-      "satellite-of-love:atomist-k8-specs": "[1.0.0,2.0.0)"
+      "satellite-of-love:atomist-k8-specs": "[1.0.0,2.0.0)",
+      "atomist:github-rugs": "[0.37.4,2.0.0)"
     },
     "extensions": {
       "com.atomist.rug:rug-function-http": "[0.6.1,1.0.0)"
