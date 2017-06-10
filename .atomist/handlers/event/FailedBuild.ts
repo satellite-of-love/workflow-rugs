@@ -1,8 +1,9 @@
-import { EventHandler, Tags } from "@atomist/rug/operations/Decorators";
+import { EventHandler, Parameter, ResponseHandler, Tags } from "@atomist/rug/operations/Decorators";
 import {
     ChannelAddress, DirectedMessage, EventPlan, HandleEvent
-    , Respond,
+    , HandleResponse, Respond, Response,
 } from "@atomist/rug/operations/Handlers";
+import { Pattern } from "@atomist/rug/operations/RugOperation";
 import { Match } from "@atomist/rug/tree/PathExpression";
 
 import { Build, Repo } from "@atomist/cortex/stub/Types";
@@ -12,7 +13,8 @@ import { byExample } from "@atomist/rugs/util/tree/QueryByExample";
 /**
  * try to get the log.
  */
-@EventHandler("FailedBuild", "try to get the log", byExample(new Build().withProvider("travis").withRepo(new Repo())))
+@EventHandler("FailedBuild", "try to get the log", byExample(
+    new Build().withProvider("travis").withStatus("failed").withRepo(new Repo())))
 @Tags("travis")
 export class FailedBuild implements HandleEvent<Build, Build> {
     public handle(event: Match<Build, Build>): EventPlan {
@@ -46,8 +48,8 @@ function fetchBuildDetailsInstruction(build: Build) {
             },
         },
         onError: {
-            kind: "respond", name: "GenericErrorHandler",
-            parameters: { msg: "build failed boo" },
+            kind: "respond", name: "ReceiveBuildDetails",
+            parameters: { repo: build.repo.name },
         } as Respond,
         onSuccess: {
             kind: "respond", name: "GenericSuccessHandler",
@@ -55,6 +57,30 @@ function fetchBuildDetailsInstruction(build: Build) {
         } as Respond,
 
     };
+}
+
+@ResponseHandler("ReceiveBuildDetails", "step 2 in FailedBuild")
+class ReceiveBuildDetails implements HandleResponse<any> {
+
+    @Parameter({ pattern: Pattern.any })
+    public repo: string;
+
+    public handle(response: Response<any>): EventPlan {
+        const result = JSON.parse(response.body);
+
+        const jobId =
+            result.matrix ?
+                (result.matrix.length > 0 ?
+                    (result.matrix[0].id ?
+                        result.matrix[0].id : "no ID")
+                    : "No entries in matrix")
+                : "no matrix";
+
+        const plan = new EventPlan();
+        plan.add(new DirectedMessage(`Found a job id ${jobId} in repo ${this.repo}`, new ChannelAddress("general")));
+        return plan;
+
+    }
 }
 
 export const failedBuild = new FailedBuild();
