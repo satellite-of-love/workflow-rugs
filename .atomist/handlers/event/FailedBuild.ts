@@ -48,12 +48,12 @@ function fetchBuildDetailsInstruction(build: Build) {
             },
         },
         onError: {
-            kind: "respond", name: "ReceiveBuildDetails",
-            parameters: { repo: build.repo.name },
+            kind: "respond", name: "LessGenericErrorHandler",
+            parameters: { channel: build.repo.name },
         } as Respond,
         onSuccess: {
-            kind: "respond", name: "GenericSuccessHandler",
-            parameters: { msg: "yay" },
+            kind: "respond", name: "ReceiveBuildDetails",
+            parameters: { repo: build.repo.name },
         } as Respond,
 
     };
@@ -82,5 +82,28 @@ class ReceiveBuildDetails implements HandleResponse<any> {
 
     }
 }
+
+@ResponseHandler("LessGenericErrorHandler", "Displays an error in chat")
+@Tags("errors")
+class LessGenericErrorHandler implements HandleResponse<any> {
+
+    @Parameter({ description: "Error prefix", pattern: "@any", required: false })
+    public msg: string;
+
+    @Parameter({ description: "Channel to report in", pattern: "@any", required: false })
+    public channel: string;
+
+    public handle(response: Response<any>): EventPlan {
+        const body = response.body != null ? "(" + response.body + ")" : "";
+        const msg = this.msg === undefined ? "" : this.msg;
+
+        const contents = `${msg}${response.msg}${body}`;
+
+        return new EventPlan().add(new DirectedMessage(contents, new ChannelAddress(this.channel)));
+    }
+}
+
+export const lessGenericErrorHandler = new LessGenericErrorHandler();
+export const thinger = new ReceiveBuildDetails();
 
 export const failedBuild = new FailedBuild();
