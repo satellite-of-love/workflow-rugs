@@ -2,17 +2,20 @@ import { EventHandler, Tags } from "@atomist/rug/operations/Decorators";
 import { ChannelAddress, DirectedMessage, EventPlan, HandleEvent } from "@atomist/rug/operations/Handlers";
 import { Match } from "@atomist/rug/tree/PathExpression";
 
-import { Build } from "@atomist/cortex/Types";
+import { Build } from "@atomist/cortex/stub/Types";
+import { byExample } from "@atomist/rugs/util/tree/QueryByExample";
 
 /**
  * A try to get the log.
  */
-@EventHandler("FailedBuild", "try to get the log", "/Build()")
-@Tags("documentation")
+@EventHandler("FailedBuild", "try to get the log", byExample(new Build()))
+@Tags("travis")
 export class FailedBuild implements HandleEvent<Build, Build> {
     public handle(event: Match<Build, Build>): EventPlan {
-        const root = event.root;
-        const message = new DirectedMessage(`${root.nodeName()} event received`, new ChannelAddress("#general"));
+        const root: Build = event.root;
+        const message = new DirectedMessage(
+            `${root.nodeName()} event received ${root.provider}, ${root.status}, ${root.repo.name}`,
+            new ChannelAddress("general"));
         return EventPlan.ofMessage(message);
     }
 }
