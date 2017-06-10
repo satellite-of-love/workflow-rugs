@@ -1,18 +1,18 @@
-import { HandleCommand, MappedParameters, MessageMimeTypes, Response, HandleResponse, HandlerContext, ResponseMessage, CommandPlan } from '@atomist/rug/operations/Handlers';
-import { EventHandler, ResponseHandler, ParseJson, CommandHandler, Secrets, MappedParameter, Parameter, Tags, Intent } from '@atomist/rug/operations/Decorators'
-import { Pattern } from '@atomist/rug/operations/RugOperation';
-import * as PlanUtils from '@atomist/rugs/operations/PlanUtils';
-import * as CommonHandlers from '@atomist/rugs/operations/CommonHandlers';
-import { toEmoji } from './SlackEmoji';
-import * as Random from 'random-js';
-import { camelCase } from 'camelcase/CamelCase';
+import { CommandHandler, EventHandler, Intent, MappedParameter, Parameter, ParseJson, ResponseHandler, Secrets, Tags } from "@atomist/rug/operations/Decorators";
+import { CommandPlan, HandleCommand, HandlerContext, HandleResponse, MappedParameters, MessageMimeTypes, Response, ResponseMessage } from "@atomist/rug/operations/Handlers";
+import { Pattern } from "@atomist/rug/operations/RugOperation";
+import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
+import * as PlanUtils from "@atomist/rugs/operations/PlanUtils";
+import { camelCase } from "camelcase/CamelCase";
+import * as Random from "random-js";
+import { toEmoji } from "./SlackEmoji";
 
 function randomHexColor(id: number): string {
 
-    let mt = new Random.engines.mt19937();
+    const mt = new Random.engines.mt19937();
     mt.seed(id);
-    let n = Math.abs(mt());
-    let h = '#' + Math.floor(n % 16777215).toString(16).substr(0, 6);
+    const n = Math.abs(mt());
+    let h = "#" + Math.floor(n % 16777215).toString(16).substr(0, 6);
     while (h.length < 6) {
         h = "0" + h; // cheap leftpad
     }
@@ -32,38 +32,38 @@ class SearchIssues implements HandleCommand {
         pattern: Pattern.any,
         displayName: "repo",
         description: "org/repo, or blank for all",
-        required: false
+        required: false,
     })
     orgRepo: string = "";
 
     @Parameter({
         pattern: Pattern.any,
         description: "must mention this user (or blank)",
-        required: false
+        required: false,
     })
     mentions: string = "";
 
     @Parameter({
         pattern: Pattern.any,
         description: "must be assigned to this github user (or blank)",
-        required: false
+        required: false,
     })
     assignee: string = "";
 
     @Parameter({
         pattern: Pattern.any,
         description: "status: open, closed, merged",
-        required: false
+        required: false,
     })
     status: string = "open";
 
     // TODO: accept user; use path expression to get GitHub login.
 
     handle(command: HandlerContext): CommandPlan {
-        let plan = new CommandPlan();
+        const plan = new CommandPlan();
 
-        let me = "jessitron"
-        let org = "satellite-of-love"
+        const me = "jessitron";
+        const org = "satellite-of-love";
         let mentions = this.mentions;
         if (mentions === "me") {
             mentions = me;
@@ -88,17 +88,18 @@ class SearchIssues implements HandleCommand {
             // todo: validate. todo: default the org.
             repoQuery = `repo:${this.orgRepo}`;
         }
-        let statusQuery = `is:${this.status}`;
+        const statusQuery = `is:${this.status}`;
 
         const base = `https://api.github.com/search/issues`;
 
-        let queries = [mentionQuery, assigneeQuery, statusQuery, repoQuery].filter(s => s !== "");
+        const queries = [mentionQuery, assigneeQuery, statusQuery, repoQuery].filter((s) => s !== "");
         if (queries === [statusQuery]) {
             return CommandPlan.ofMessage(new ResponseMessage(
-                `I don't want to query all ${this.status} issues on GitHub. Try adding \`--assignee me\` or \`--orgRepo satellite-of-love/workflow-rugs\``));
+                `I don't want to query all ${this.status} issues on GitHub. Try adding \`--assignee me\` or \`--orgRepo satellite-of-love/workflow-rugs\``,
+            ));
         }
 
-        let instr = PlanUtils.execute("http",
+        const instr = PlanUtils.execute("http",
             {
                 url: `${base}?q=${queries.join("%20")}`,
                 method: "get",
@@ -107,10 +108,14 @@ class SearchIssues implements HandleCommand {
                         "Content-Type": "application/json",
                         "Authorization": `token #{github://user_token?scopes=repo}`,
                     },
-                }
-            }
+                },
+            },
         );
-        instr.onSuccess = { kind: "respond", name: "ReceiveSearchIssues", parameters: { queryString: queries.join("+") } }
+        instr.onSuccess = {
+            kind: "respond",
+            name: "ReceiveSearchIssues",
+            parameters: { queryString: queries.join("+") },
+        };
 
         CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
         plan.add(new ResponseMessage(`Querying github for issues ${queries.join(" ")}`));
@@ -122,50 +127,48 @@ class SearchIssues implements HandleCommand {
 
 }
 
-
 @ResponseHandler("ReceiveSearchIssues", "step 2 in ListMyIssues")
 class ReceiveSearchIssues implements HandleResponse<any> {
     @Parameter({ pattern: Pattern.any })
     queryString: string;
 
-    handle(response: Response<any>, ): CommandPlan {
+    handle(response: Response<any>): CommandPlan {
 
-        let result = JSON.parse(response.body)
+        const result = JSON.parse(response.body);
 
-        let count = result.total_count;
+        const count = result.total_count;
 
-        let information = result.items.map(item => {
-            let type = this.issueOrPR(item);
-            let repo = this.issueRepo(item);
-            let labels = item.labels.map(label => toEmoji(label.name)).join(" ");
+        const information = result.items.map((item) => {
+            const type = this.issueOrPR(item);
+            const repo = this.issueRepo(item);
+            const labels = item.labels.map((label) => toEmoji(label.name)).join(" ");
             let assignee = "Unassigned";
             if (item.assignees.size > 0) {
-                assignee = "assigned to " + item.assignees.map(a => toEmoji(a.login)).join(" ");
+                assignee = "assigned to " + item.assignees.map((a) => toEmoji(a.login)).join(" ");
             } else if (item.assignee != null) {
-                assignee = "assigned to " + toEmoji(item.assignee.login)
+                assignee = "assigned to " + toEmoji(item.assignee.login);
             }
 
-            let slack: any = {
-                "mrkdwn_in": ["text"],
-                "color": randomHexColor(item.id),
-                "author_name": assignee,
-                "title": `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
-                "text": `${labels} created ${this.timeSince(item.created_at)} by :${item.user.login}:, updated ${this.timeSince(item.updated_at)}`,
-                "fallback": item.html_url
+            const slack: any = {
+                mrkdwn_in: ["text"],
+                color: randomHexColor(item.id),
+                author_name: assignee,
+                title: `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
+                text: `${labels} created ${this.timeSince(item.created_at)} by :${item.user.login}:, updated ${this.timeSince(item.updated_at)}`,
+                fallback: item.html_url,
             };
             if (this.not_long_ago(item.created_at)) {
-                slack.thumb_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png"
+                slack.thumb_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png";
             }
             return slack;
         });
 
-
-        let slack = {
+        const slack = {
             text: `There are ${count}. Search more on <https://github.com/issues?q=${this.queryString}|Github>`,
-            attachments: information
+            attachments: information,
         };
 
-        let plan = CommandPlan.ofMessage(new ResponseMessage(JSON.stringify(slack), MessageMimeTypes.SLACK_JSON));
+        const plan = CommandPlan.ofMessage(new ResponseMessage(JSON.stringify(slack), MessageMimeTypes.SLACK_JSON));
 
         return plan;
     }
@@ -175,20 +178,20 @@ class ReceiveSearchIssues implements HandleResponse<any> {
             return false;
         }
         let recent = 86400; // a day
-        if (new Date().getDay() == 1) {
+        if (new Date().getDay() === 1) {
             // it is Monday
             recent = recent * 3; // think back to Friday
         }
-        let then = Date.parse(dateString)
-        let now = new Date().getTime();
-        let secondsPast = (now - then) / 1000;
+        const then = Date.parse(dateString);
+        const now = new Date().getTime();
+        const secondsPast = (now - then) / 1000;
 
         return secondsPast < recent;
     }
 
     private issueRepo(item) {
-        let match = /repos\/[A-Za-z0-9_-]+\/([A-Za-z0-9_-]+)\//.exec(item.url);
-        if (match == null) { return item.url }
+        const match = /repos\/[A-Za-z0-9_-]+\/([A-Za-z0-9_-]+)\//.exec(item.url);
+        if (match == null) { return item.url; }
         return match[1];
     }
 
@@ -203,9 +206,9 @@ class ReceiveSearchIssues implements HandleResponse<any> {
         if (dateString == null) {
             return "never";
         }
-        let then = Date.parse(dateString)
-        let now = new Date().getTime();
-        let secondsPast = (now - then) / 1000;
+        const then = Date.parse(dateString);
+        const now = new Date().getTime();
+        const secondsPast = (now - then) / 1000;
         if (secondsPast < 60) {
             return `${Math.round(secondsPast)}s ago`;
         }
