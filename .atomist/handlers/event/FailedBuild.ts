@@ -32,7 +32,7 @@ export class FailedBuild implements HandleEvent<Build, Build> {
 }
 
 function fetchBuildDetailsInstruction(build: Build) {
-    const url = `https://api.travis-ci.org/build/${build.id}`;
+    const url = `https://api.travis-ci.org/builds/${build.id}`;
     return {
         instruction: {
             kind: "execute",
@@ -70,12 +70,12 @@ class ReceiveBuildDetails implements HandleResponse<any> {
         const result = JSON.parse(response.body);
 
         const jobId =
-            result.matrix ?
-                (result.matrix.length > 0 ?
-                    (result.matrix[0].id ?
-                        result.matrix[0].id : "no ID")
-                    : "No entries in matrix")
-                : "no matrix";
+            result.jobs ?
+                (result.jobs.length > 0 ?
+                    (result.jobs[0].id ?
+                        result.jobs[0].id : "no ID")
+                    : "No entries in jobs")
+                : "no jobs";
 
         const plan = new EventPlan();
         plan.add(new DirectedMessage(`Found a job id ${jobId} in repo ${this.repo}`, new ChannelAddress("general")));
@@ -86,7 +86,7 @@ class ReceiveBuildDetails implements HandleResponse<any> {
 }
 
 function retrieveLogInstruction(repo: string, jobId: string) {
-    const url = `https://api.travis-ci.org/job/${jobId}`;
+    const url = `https://api.travis-ci.org/jobs/${jobId}`;
     return {
         instruction: {
             kind: "execute",
@@ -152,7 +152,7 @@ class LessGenericErrorHandler implements HandleResponse<any> {
         const body = response.body != null ? "(" + response.body + ")" : "";
         const msg = this.msg === undefined ? "" : this.msg;
 
-        const contents = `${msg}${response.msg}${body}`;
+        const contents = `${msg} ${response.msg} ${body}`;
 
         return new EventPlan().add(new DirectedMessage(contents, new ChannelAddress(this.channel)));
     }
