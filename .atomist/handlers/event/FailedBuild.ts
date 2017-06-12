@@ -49,7 +49,7 @@ function fetchBuildDetailsInstruction(build: Build) {
         },
         onError: {
             kind: "respond", name: "LessGenericErrorHandler",
-            parameters: { channel: build.repo.name },
+            parameters: { channel: "banana" },
         } as Respond,
         onSuccess: {
             kind: "respond", name: "ReceiveBuildDetails",
@@ -102,7 +102,7 @@ function retrieveLogInstruction(repo: string, jobId: string) {
         },
         onError: {
             kind: "respond", name: "LessGenericErrorHandler",
-            parameters: { channel: repo, msg: "trying to retrieve job details with the log in it" },
+            parameters: { channel: "banana", msg: "trying to retrieve job details with the log in it" },
         } as Respond,
         onSuccess: {
             kind: "respond", name: "ReceiveLog",
