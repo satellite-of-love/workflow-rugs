@@ -28,7 +28,7 @@
       "atomist:github-rugs": "[0.37.4,2.0.0)"
     },
     "extensions": {
-      "com.atomist.rug:rug-function-http": "[0.6.1,1.0.0)"
+      "com.atomist.rug:rug-function-http": "0.8.0-SNAPSHOT"
     }
   }
 }
