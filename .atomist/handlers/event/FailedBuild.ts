@@ -32,12 +32,13 @@ export class FailedBuild implements HandleEvent<Build, Build> {
 }
 
 function fetchBuildDetailsInstruction(build: Build) {
+    const url = `https://api.travis-ci.org/build/${build.id}`;
     return {
         instruction: {
             kind: "execute",
             name: "http",
             parameters: {
-                url: `https://api.travis-ci.org/build/${build.id}`,
+                url,
                 method: "get",
                 config: {
                     headers: {
@@ -49,7 +50,7 @@ function fetchBuildDetailsInstruction(build: Build) {
         },
         onError: {
             kind: "respond", name: "LessGenericErrorHandler",
-            parameters: { channel: "banana" },
+            parameters: { channel: "banana", msg: url },
         } as Respond,
         onSuccess: {
             kind: "respond", name: "ReceiveBuildDetails",
@@ -85,12 +86,13 @@ class ReceiveBuildDetails implements HandleResponse<any> {
 }
 
 function retrieveLogInstruction(repo: string, jobId: string) {
+    const url = `https://api.travis-ci.org/job/${jobId}`;
     return {
         instruction: {
             kind: "execute",
             name: "http",
             parameters: {
-                url: `https://api.travis-ci.org/jobs/${jobId}`,
+                url ,
                 method: "get",
                 config: {
                     headers: {
@@ -102,7 +104,7 @@ function retrieveLogInstruction(repo: string, jobId: string) {
         },
         onError: {
             kind: "respond", name: "LessGenericErrorHandler",
-            parameters: { channel: "banana", msg: "trying to retrieve job details with the log in it" },
+            parameters: { channel: "banana", msg: "url" },
         } as Respond,
         onSuccess: {
             kind: "respond", name: "ReceiveLog",
