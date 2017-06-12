@@ -78,6 +78,59 @@ class ReceiveBuildDetails implements HandleResponse<any> {
 
         const plan = new EventPlan();
         plan.add(new DirectedMessage(`Found a job id ${jobId} in repo ${this.repo}`, new ChannelAddress("general")));
+        plan.add(retrieveLogInstruction(this.repo, jobId));
+        return plan;
+
+    }
+}
+
+function retrieveLogInstruction(repo: string, jobId: string) {
+    return {
+        instruction: {
+            kind: "execute",
+            name: "http",
+            parameters: {
+                url: `https://api.travis-ci.org/jobs/${jobId}`,
+                method: "get",
+                config: {
+                    headers: {
+                        "Content-Type": "application/vnd.travis-ci.2+json",
+                        "User-Agent": "rug/1.0.0",
+                    },
+                },
+            },
+        },
+        onError: {
+            kind: "respond", name: "LessGenericErrorHandler",
+            parameters: { channel: repo, msg: "trying to retrieve job details with the log in it" },
+        } as Respond,
+        onSuccess: {
+            kind: "respond", name: "ReceiveLog",
+            parameters: { repo },
+        } as Respond,
+
+    };
+}
+
+@ResponseHandler("ReceiveLog", "step 3 in FailedBuild")
+class ReceiveLog implements HandleResponse<any> {
+
+    @Parameter({ pattern: Pattern.any })
+    public repo: string;
+
+    public handle(response: Response<any>): EventPlan {
+        const result = JSON.parse(response.body);
+
+        const log = result.log;
+        if (!log) {
+            return EventPlan.ofMessage(
+                new DirectedMessage("Did not find the log for job " + result.id,
+                    new ChannelAddress(this.repo)));
+        }
+
+        const plan = new EventPlan();
+        plan.add(new DirectedMessage(
+            `Found a log for ${result.id}`, new ChannelAddress(this.repo)));
         return plan;
 
     }
@@ -103,6 +156,7 @@ class LessGenericErrorHandler implements HandleResponse<any> {
     }
 }
 
+export const receiveLog = new ReceiveLog();
 export const lessGenericErrorHandler = new LessGenericErrorHandler();
 export const thinger = new ReceiveBuildDetails();
 
