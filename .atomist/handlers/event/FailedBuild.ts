@@ -1,14 +1,14 @@
-import { EventHandler, Parameter, ResponseHandler, Tags } from "@atomist/rug/operations/Decorators";
+import {EventHandler, Parameter, ResponseHandler, Tags} from "@atomist/rug/operations/Decorators";
 import {
     ChannelAddress, DirectedMessage, EventPlan, HandleEvent
     , HandleResponse, Respond, Response,
 } from "@atomist/rug/operations/Handlers";
-import { Pattern } from "@atomist/rug/operations/RugOperation";
-import { Match } from "@atomist/rug/tree/PathExpression";
+import {Pattern} from "@atomist/rug/operations/RugOperation";
+import {Match} from "@atomist/rug/tree/PathExpression";
 
-import { Build, Repo } from "@atomist/cortex/stub/Types";
+import {Build, Repo} from "@atomist/cortex/stub/Types";
 import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
-import { byExample } from "@atomist/rugs/util/tree/QueryByExample";
+import {byExample} from "@atomist/rugs/util/tree/QueryByExample";
 
 /**
  * try to get the log.
@@ -50,11 +50,11 @@ function fetchBuildDetailsInstruction(build: Build) {
         },
         onError: {
             kind: "respond", name: "LessGenericErrorHandler",
-            parameters: { channel: "banana", msg: url },
+            parameters: {channel: "banana", msg: url},
         } as Respond,
         onSuccess: {
             kind: "respond", name: "ReceiveBuildDetails",
-            parameters: { repo: build.repo.name },
+            parameters: {repo: build.repo.name},
         } as Respond,
 
     };
@@ -63,7 +63,7 @@ function fetchBuildDetailsInstruction(build: Build) {
 @ResponseHandler("ReceiveBuildDetails", "step 2 in FailedBuild")
 class ReceiveBuildDetails implements HandleResponse<any> {
 
-    @Parameter({ pattern: Pattern.any })
+    @Parameter({pattern: Pattern.any})
     public repo: string;
 
     public handle(response: Response<any>): EventPlan {
@@ -75,9 +75,20 @@ class ReceiveBuildDetails implements HandleResponse<any> {
                     (result.jobs[0].id ?
                         result.jobs[0].id : "sorry: no ID")
                     : "sorry: No entries in jobs")
-                : "sorry: no jobs";
+                : (result.matrix ?
+                (result.matrix.length > 0 ?
+                    (result.matrix[0].id ?
+                        result.matrix[0].id : "sorry: no matrix ID")
+                    : "sorry: No entries in matrix")
+                : "sorry: no jobs and no matrix");
         console.log("the result is: " + JSON.stringify(result));
 
+        if (jobId.startsWith("sorry")) {
+            return EventPlan.ofMessage(
+                new DirectedMessage(
+                    `Sorry, couldn't find the job inside the build for ${result.id} on ${this.repo}.`,
+                    new ChannelAddress("banana")))
+        }
         const plan = new EventPlan();
         plan.add(new DirectedMessage(`Found a job id ${jobId} in repo ${this.repo}`, new ChannelAddress("general")));
         plan.add(retrieveLogInstruction(this.repo, jobId));
@@ -93,7 +104,7 @@ function retrieveLogInstruction(repo: string, jobId: string) {
             kind: "execute",
             name: "http",
             parameters: {
-                url ,
+                url,
                 method: "get",
                 config: {
                     headers: {
@@ -105,11 +116,11 @@ function retrieveLogInstruction(repo: string, jobId: string) {
         },
         onError: {
             kind: "respond", name: "LessGenericErrorHandler",
-            parameters: { channel: "banana", msg: url },
+            parameters: {channel: "banana", msg: url},
         } as Respond,
         onSuccess: {
             kind: "respond", name: "ReceiveLog",
-            parameters: { repo },
+            parameters: {repo},
         } as Respond,
 
     };
@@ -118,7 +129,7 @@ function retrieveLogInstruction(repo: string, jobId: string) {
 @ResponseHandler("ReceiveLog", "step 3 in FailedBuild")
 class ReceiveLog implements HandleResponse<any> {
 
-    @Parameter({ pattern: Pattern.any })
+    @Parameter({pattern: Pattern.any})
     public repo: string;
 
     public handle(response: Response<any>): EventPlan {
@@ -143,10 +154,10 @@ class ReceiveLog implements HandleResponse<any> {
 @Tags("errors")
 class LessGenericErrorHandler implements HandleResponse<any> {
 
-    @Parameter({ description: "Error prefix", pattern: "@any", required: false })
+    @Parameter({description: "Error prefix", pattern: "@any", required: false})
     public msg: string;
 
-    @Parameter({ description: "Channel to report in", pattern: "@any", required: false })
+    @Parameter({description: "Channel to report in", pattern: "@any", required: false})
     public channel: string;
 
     public handle(response: Response<any>): EventPlan {
