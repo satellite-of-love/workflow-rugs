@@ -1,4 +1,5 @@
-import {CommandHandler, Intent, ResponseHandler,
+import {
+    CommandHandler, Intent, ResponseHandler,
     MappedParameter, Secrets, Tags, Parameter
 } from "@atomist/rug/operations/Decorators";
 import {
@@ -58,11 +59,14 @@ class StuffInProgress implements HandleCommand {
                 },
             },
         );
-        instr.onSuccess = {kind: "respond", name: "ReceiveMyIssues",
+        instr.onSuccess = {
+            kind: "respond",
+            name: "ReceiveMyIssues",
             parameters: {
-            corrid: this.corrid,
-            channel: this.channel
-        }};
+                corrid: this.corrid,
+                channel: this.channel
+            }
+        };
         CommonHandlers.handleErrors(instr, {msg: "The request to GitHub failed"});
         plan.add(instr);
 
@@ -77,12 +81,11 @@ class ReceiveMyIssues implements HandleResponse<any> {
     public corrid: string;
 
     @Parameter({pattern: Pattern.any})
-    public channel: string;
+    public channel: string = "general";
 
     public handle(response: Response<any>): CommandPlan {
 
         const result = JSON.parse(response.body);
-
 
 
         const count = result.total_count;
@@ -208,8 +211,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
 }
 
 function parseRepositoryUrl(repositoryUrl: string): [string, string] {
-    const match = repositoryUrl.
-    match(/^https:\/\/api\.github\.com\/repos\/([-.\w]+)\/([-.\w]+)$/);
+    const match = repositoryUrl.match(/^https:\/\/api\.github\.com\/repos\/([-.\w]+)\/([-.\w]+)$/);
     return [match[2], match[1]];
 }
 
@@ -231,7 +233,7 @@ function closeInstruction(channel: string, corrid: string, item): SlackMessages.
             }
         },
         onSuccess: new DirectedMessage("Closed <${item.html_url}|${owner}/${repo}#${item.number}"
-        , new ChannelAddress(channel)),
+            , new ChannelAddress(channel)),
     };
     const identifier: SlackMessages.IdentifiableInstruction = {
         id: `CLOSE-${item.html_url}`
