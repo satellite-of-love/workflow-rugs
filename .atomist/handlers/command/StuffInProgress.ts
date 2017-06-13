@@ -8,12 +8,12 @@ import {
     Response, ResponseMessage, Identifiable, DirectedMessage,
     ChannelAddress, Instruction
 } from "@atomist/rug/operations/Handlers";
-import { Pattern } from "@atomist/rug/operations/RugOperation";
+import {Pattern} from "@atomist/rug/operations/RugOperation";
 import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
 import * as PlanUtils from "@atomist/rugs/operations/PlanUtils";
 import * as RugMessages from "@atomist/slack-messages/RugMessages";
 import * as SlackMessages from "@atomist/slack-messages/SlackMessages";
-import { toEmoji } from "./SlackEmoji";
+import {toEmoji} from "./SlackEmoji";
 
 /**
  * A sample Rug TypeScript command handler.
@@ -46,8 +46,8 @@ class StuffInProgress implements HandleCommand {
                 },
             },
         );
-        instr.onSuccess = { kind: "respond", name: "ReceiveMyIssues", parameters: {} };
-        CommonHandlers.handleErrors(instr, { msg: "The request to GitHub failed" });
+        instr.onSuccess = {kind: "respond", name: "ReceiveMyIssues", parameters: {}};
+        CommonHandlers.handleErrors(instr, {msg: "The request to GitHub failed"});
         plan.add(instr);
 
         return plan;
@@ -80,11 +80,10 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 mrkdwn_in: ["text"],
                 color: "#3D9900",
                 title: `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
-                text:
-                `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
+                text: `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
                 fallback: item.html_url,
                 actions: [
-                    SlackMessages.rugButtonFrom({ text: "Close issue" },
+                    SlackMessages.rugButtonFrom({text: "Close issue"},
                         closeInstructions[i]),
                 ],
             };
@@ -147,7 +146,9 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
     private issueRepo(item) {
         const match = /repos\/[A-Za-z0-9_-]+\/([A-Za-z0-9_-]+)\//.exec(item.url);
-        if (match == null) { return item.url; }
+        if (match == null) {
+            return item.url;
+        }
         return match[1];
     }
 
@@ -185,8 +186,14 @@ class ReceiveMyIssues implements HandleResponse<any> {
 function closeInstruction(item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
     const instr: Identifiable<"command"> = {
         instruction: {
-            kind: "command",
-            name: "Dammit"
+            kind: "command", name: {
+                name: "CloseGitHubIssue",
+                group: "atomist",
+                artifact: "github-rugs",
+            },
+            parameters: {
+                issue: item.number
+            }
         }
     }
     const identifier: SlackMessages.IdentifiableInstruction = {
