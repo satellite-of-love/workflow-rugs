@@ -11,7 +11,7 @@ import {
     Identifiable,
     MessageMimeTypes,
     Response,
-    ResponseMessage,
+    ResponseMessage, MappedParameters
 } from "@atomist/rug/operations/Handlers";
 import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
 import * as PlanUtils from "@atomist/rugs/operations/PlanUtils";
@@ -32,6 +32,11 @@ class StuffInProgress implements HandleCommand {
 
     @MappedParameter("atomist://correlation_id")
     public corrid: string;
+
+
+    @MappedParameter(MappedParameters.SLACK_CHANNEL)
+    public channel: string;
+
 
     public handle(command: HandlerContext): CommandPlan {
         const plan = new CommandPlan();
@@ -68,6 +73,9 @@ class ReceiveMyIssues implements HandleResponse<any> {
     @Parameter({pattern: Pattern.any})
     public corrid: string;
 
+    @Parameter({pattern: Pattern.any})
+    public channel: string;
+
     public handle(response: Response<any>): CommandPlan {
 
         const result = JSON.parse(response.body);
@@ -81,7 +89,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
         const openOnes = result.items.filter((item) => !item.closed_at);
 
         const closeInstructions = openOnes.map((item) =>
-            closeInstruction(this.corrid, item)
+            closeInstruction(this.channel, this.corrid, item)
         )
 
         const information = openOnes.map((item, i) => {
@@ -202,7 +210,7 @@ function parseRepositoryUrl(repositoryUrl: string): [string, string] {
     return [match[2], match[1]];
 }
 
-function closeInstruction(corrid: string, item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
+function closeInstruction(channel: string, corrid: string, item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
 
     const [repo, owner] = parseRepositoryUrl(item.repository_url);
     const instr: Identifiable<"command"> & any /* and Respondable */ = {
@@ -219,7 +227,8 @@ function closeInstruction(corrid: string, item): SlackMessages.IdentifiableInstr
                 owner,
             }
         },
-        onSuccess: new ResponseMessage("Closed <${item.html_url}|${owner}/${repo}#${item.number}"),
+        onSuccess: new DirectedMessage("Closed <${item.html_url}|${owner}/${repo}#${item.number}"
+        , new ChannelAddress(channel)),
     };
     const identifier: SlackMessages.IdentifiableInstruction = {
         id: `CLOSE-${item.html_url}`
