@@ -205,7 +205,7 @@ function parseRepositoryUrl(repositoryUrl: string): [string, string] {
 function closeInstruction(corrid: string, item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
 
     const [repo, owner] = parseRepositoryUrl(item.repository_url);
-    const instr: Identifiable<"command"> = {
+    const instr: Identifiable<"command"> & any /* and Respondable */ = {
         instruction: {
             kind: "command", name: {
                 name: "CloseGitHubIssue",
@@ -218,7 +218,8 @@ function closeInstruction(corrid: string, item): SlackMessages.IdentifiableInstr
                 repo,
                 owner,
             }
-        }
+        },
+        onSuccess: new ResponseMessage("Closed <${item.html_url}|${owner}/${repo}#${item.number}"),
     };
     const identifier: SlackMessages.IdentifiableInstruction = {
         id: `CLOSE-${item.html_url}`
