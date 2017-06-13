@@ -59,7 +59,10 @@ class StuffInProgress implements HandleCommand {
             },
         );
         instr.onSuccess = {kind: "respond", name: "ReceiveMyIssues",
-            parameters: { corrid: this.corrid }};
+            parameters: {
+            corrid: this.corrid,
+            channel: this.channel
+        }};
         CommonHandlers.handleErrors(instr, {msg: "The request to GitHub failed"});
         plan.add(instr);
 
