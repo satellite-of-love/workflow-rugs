@@ -199,7 +199,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
 function parseRepositoryUrl(repositoryUrl: string): [string, string] {
     const match = repositoryUrl.
     match(/^https:\/\/api\.github\.com\/repos\/([-.\w]+)\/([-.\w]+)$/);
-    return [match[1], match[2]];
+    return [match[2], match[1]];
 }
 
 function closeInstruction(corrid: string, item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
