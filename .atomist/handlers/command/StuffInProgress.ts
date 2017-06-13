@@ -1,19 +1,23 @@
-import {
-    CommandHandler, EventHandler, Intent, MappedParameter,
-    Parameter, ParseJson, ResponseHandler, Secrets, Tags,
+import {CommandHandler, Intent, ResponseHandler,
+    MappedParameter, Secrets, Tags, Parameter
 } from "@atomist/rug/operations/Decorators";
 import {
-    CommandPlan, CommandRespondable, Execute, HandleCommand,
-    HandlerContext, HandleResponse, MappedParameters, MessageMimeTypes,
-    Response, ResponseMessage, Identifiable, DirectedMessage,
-    ChannelAddress, Instruction
+    ChannelAddress,
+    CommandPlan,
+    DirectedMessage,
+    HandleCommand,
+    HandlerContext,
+    HandleResponse,
+    Identifiable,
+    MessageMimeTypes,
+    Response,
+    ResponseMessage,
 } from "@atomist/rug/operations/Handlers";
-import {Pattern} from "@atomist/rug/operations/RugOperation";
 import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
 import * as PlanUtils from "@atomist/rugs/operations/PlanUtils";
-import * as RugMessages from "@atomist/slack-messages/RugMessages";
 import * as SlackMessages from "@atomist/slack-messages/SlackMessages";
 import {toEmoji} from "./SlackEmoji";
+import {Pattern} from "@atomist/rug/operations/RugOperation";
 
 /**
  * A sample Rug TypeScript command handler.
@@ -25,6 +29,9 @@ import {toEmoji} from "./SlackEmoji";
 class StuffInProgress implements HandleCommand {
 
     // TODO: accept user; use path expression to get GitHub login.
+
+    @MappedParameter("atomist://correlation_id")
+    public corrid: string;
 
     public handle(command: HandlerContext): CommandPlan {
         const plan = new CommandPlan();
@@ -46,7 +53,8 @@ class StuffInProgress implements HandleCommand {
                 },
             },
         );
-        instr.onSuccess = {kind: "respond", name: "ReceiveMyIssues", parameters: {}};
+        instr.onSuccess = {kind: "respond", name: "ReceiveMyIssues",
+            parameters: { corrid: this.corrid }};
         CommonHandlers.handleErrors(instr, {msg: "The request to GitHub failed"});
         plan.add(instr);
 
@@ -57,9 +65,14 @@ class StuffInProgress implements HandleCommand {
 
 @ResponseHandler("ReceiveMyIssues", "step 2 in ListMyIssues")
 class ReceiveMyIssues implements HandleResponse<any> {
+    @Parameter({pattern: Pattern.any})
+    public corrid: string;
+
     public handle(response: Response<any>): CommandPlan {
 
         const result = JSON.parse(response.body);
+
+
 
         const count = result.total_count;
 
@@ -68,7 +81,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
         const openOnes = result.items.filter((item) => !item.closed_at);
 
         const closeInstructions = openOnes.map((item) =>
-            closeInstruction(item)
+            closeInstruction(this.corrid, item)
         )
 
         const information = openOnes.map((item, i) => {
@@ -183,7 +196,15 @@ class ReceiveMyIssues implements HandleResponse<any> {
     }
 }
 
-function closeInstruction(item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
+function parseRepositoryUrl(repositoryUrl: string): [string, string] {
+    const match = repositoryUrl.
+    match(/^https:\/\/api\.github\.com\/repos\/([-.\w]+)\/([-.\w]+)$/);
+    return [match[1], match[2]];
+}
+
+function closeInstruction(corrid: string, item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
+
+    const [repo, owner] = parseRepositoryUrl(item.repository_url);
     const instr: Identifiable<"command"> = {
         instruction: {
             kind: "command", name: {
@@ -192,15 +213,16 @@ function closeInstruction(item): SlackMessages.IdentifiableInstruction & Identif
                 artifact: "github-rugs",
             },
             parameters: {
+                corrid,
                 issue: item.number,
-                repo: item.repository.name,
-                owner: item.repository.owner.login,
+                repo,
+                owner,
             }
         }
-    }
+    };
     const identifier: SlackMessages.IdentifiableInstruction = {
         id: `CLOSE-${item.html_url}`
-    }
+    };
     return {
         ...instr,
         ...identifier
