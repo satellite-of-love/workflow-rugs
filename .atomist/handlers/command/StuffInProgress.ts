@@ -192,7 +192,9 @@ function closeInstruction(item): SlackMessages.IdentifiableInstruction & Identif
                 artifact: "github-rugs",
             },
             parameters: {
-                issue: item.number
+                issue: item.number,
+                repo: item.repository.name,
+                owner: item.repository.owner.login,
             }
         }
     }

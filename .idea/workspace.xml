@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="0d6296dd-f687-4591-916b-4c690a2f52e0" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.atomist/handlers/command/StuffInProgress.ts" afterPath="$PROJECT_DIR$/.atomist/handlers/command/StuffInProgress.ts" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -28,11 +27,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="StuffInProgress.ts" pinned="false" current-in-tab="false">
+      <file leaf-file-name="StuffInProgress.ts" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/.atomist/handlers/command/StuffInProgress.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="336">
-              <caret line="194" column="34" lean-forward="true" selection-start-line="194" selection-start-column="34" selection-end-line="194" selection-end-column="34" />
+            <state relative-caret-position="386">
+              <caret line="196" column="51" lean-forward="true" selection-start-line="196" selection-start-column="51" selection-end-line="196" selection-end-column="51" />
               <folding>
                 <element signature="e#0#170#0" expanded="true" />
               </folding>
@@ -40,11 +39,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="package.json" pinned="false" current-in-tab="true">
+      <file leaf-file-name="package.json" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/.atomist/package.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-255">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="378">
+              <caret line="16" column="40" lean-forward="false" selection-start-line="16" selection-start-column="40" selection-end-line="16" selection-end-column="40" />
               <folding />
             </state>
           </provider>
@@ -69,6 +68,7 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/.atomist/handlers/event/FailedBuild.ts" />
+        <option value="$PROJECT_DIR$/.atomist/package.json" />
         <option value="$PROJECT_DIR$/.atomist/handlers/command/StuffInProgress.ts" />
       </list>
     </option>
@@ -825,21 +825,21 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.atomist/handlers/command/StuffInProgress.ts">
+    <entry file="file://$PROJECT_DIR$/.atomist/package.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="336">
-          <caret line="194" column="34" lean-forward="true" selection-start-line="194" selection-start-column="34" selection-end-line="194" selection-end-column="34" />
-          <folding>
-            <element signature="e#0#170#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="378">
+          <caret line="16" column="40" lean-forward="false" selection-start-line="16" selection-start-column="40" selection-end-line="16" selection-end-column="40" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.atomist/package.json">
+    <entry file="file://$PROJECT_DIR$/.atomist/handlers/command/StuffInProgress.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-255">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="386">
+          <caret line="196" column="51" lean-forward="true" selection-start-line="196" selection-start-column="51" selection-end-line="196" selection-end-column="51" />
+          <folding>
+            <element signature="e#0#170#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
