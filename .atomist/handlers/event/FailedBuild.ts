@@ -73,9 +73,10 @@ class ReceiveBuildDetails implements HandleResponse<any> {
             result.jobs ?
                 (result.jobs.length > 0 ?
                     (result.jobs[0].id ?
-                        result.jobs[0].id : "no ID")
-                    : "No entries in jobs")
-                : "no jobs";
+                        result.jobs[0].id : "sorry: no ID")
+                    : "sorry: No entries in jobs")
+                : "sorry: no jobs";
+        console.log("the result is: " + JSON.stringify(result));
 
         const plan = new EventPlan();
         plan.add(new DirectedMessage(`Found a job id ${jobId} in repo ${this.repo}`, new ChannelAddress("general")));
@@ -104,7 +105,7 @@ function retrieveLogInstruction(repo: string, jobId: string) {
         },
         onError: {
             kind: "respond", name: "LessGenericErrorHandler",
-            parameters: { channel: "banana", msg: "url" },
+            parameters: { channel: "banana", msg: url },
         } as Respond,
         onSuccess: {
             kind: "respond", name: "ReceiveLog",
