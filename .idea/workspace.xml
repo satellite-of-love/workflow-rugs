@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0d6296dd-f687-4591-916b-4c690a2f52e0" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.atomist/handlers/command/StuffInProgress.ts" afterPath="$PROJECT_DIR$/.atomist/handlers/command/StuffInProgress.ts" />
-    </list>
+    <list default="true" id="0d6296dd-f687-4591-916b-4c690a2f52e0" name="Default" comment="" />
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
