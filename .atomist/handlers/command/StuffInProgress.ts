@@ -114,10 +114,6 @@ class ReceiveMyIssues implements HandleResponse<any> {
                         closeInstructions[i]),
                 ],
             };
-            if (this.not_long_ago(item.created_at)) {
-                attachment.thumb_url =
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Sol.svg/256px-Sol.svg.png";
-            }
             return attachment;
         });
 
@@ -133,7 +129,6 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 title: `<${item.html_url}|${repo} ${type} #${item.number}: ${item.title}>`,
                 text: `${labels} created ${this.timeSince(item.created_at)}, closed ${this.timeSince(item.closed_at)}`,
                 fallback: item.html_url,
-                thumb_url: "https://upload.wikimedia.org/wikipedia/commons/9/91/Checked_icon.png",
             };
         });
 
