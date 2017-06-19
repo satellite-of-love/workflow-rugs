@@ -41,7 +41,7 @@ class StuffInProgress implements HandleCommand {
 
 
     public handle(command: HandlerContext): CommandPlan {
-        const channel = this.channel;
+        const channel = "general" ;// TODO get the real channel. this.channel;
         const issuesMessageId = `issues-for-${this.corrid}`;
         const user = "jessitron";
         const org = "satellite-of-love";
