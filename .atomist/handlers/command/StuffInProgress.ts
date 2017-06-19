@@ -42,32 +42,12 @@ class StuffInProgress implements HandleCommand {
     public handle(command: HandlerContext): CommandPlan {
         const plan = new CommandPlan();
 
+        const issuesMessageId = `issues-for-$corrid`;
+
         const user = "jessitron";
         const org = "satellite-of-love";
 
-        const base = `https://api.github.com/search/issues`;
-
-        const instr = PlanUtils.execute("http",
-            {
-                url: `${base}?q=assignee:${user}%20org:${org}`,
-                method: "get",
-                config: {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `token #{github://user_token?scopes=repo}`,
-                    },
-                },
-            },
-        );
-        instr.onSuccess = {
-            kind: "respond",
-            name: "ReceiveMyIssues",
-            parameters: {
-                corrid: this.corrid,
-                channel: this.channel
-            }
-        };
-        CommonHandlers.handleErrors(instr, {msg: "The request to GitHub failed"});
+        const instr = queryIssuesInstruction(user, org, issuesMessageId);
         plan.add(instr);
 
         return plan;
@@ -75,10 +55,38 @@ class StuffInProgress implements HandleCommand {
 
 }
 
-@ResponseHandler("ReceiveMyIssues", "step 2 in ListMyIssues")
+function queryIssuesInstruction(user: string, org: string, messageId: string) {
+
+    const base = `https://api.github.com/search/issues`;
+
+    const instr = PlanUtils.execute("http",
+        {
+            url: `${base}?q=assignee:${user}%20org:${org}`,
+            method: "get",
+            config: {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `token #{github://user_token?scopes=repo}`,
+                },
+            },
+        },
+    );
+    instr.onSuccess = {
+        kind: "respond",
+        name: "ReceiveMyIssues",
+        parameters: {
+            messageId,
+            channel: this.channel
+        }
+    };
+    CommonHandlers.handleErrors(instr, {msg: "The request to GitHub failed"});
+    return instr;
+}
+
+@ResponseHandler("ReceiveMyIssues", "step 2 in StuffInProgress")
 class ReceiveMyIssues implements HandleResponse<any> {
     @Parameter({pattern: Pattern.any})
-    public corrid: string;
+    public messageId: string;
 
     @Parameter({pattern: Pattern.any})
     public channel: string = "general";
@@ -87,15 +95,16 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
         const result = JSON.parse(response.body);
 
-
         const count = result.total_count;
 
         // TODO: in the search string, ignore ones closed a long time ago so we don't get to many.
         const closedOnes = result.items.filter((item) => this.not_long_ago(item.closed_at));
         const openOnes = result.items.filter((item) => !item.closed_at);
 
-        const closeInstructions = openOnes.map((item) =>
-            closeInstruction(this.channel, this.corrid, item)
+
+        const closeInstructions = openOnes.map((item) => {
+        const [repo, owner] = parseRepositoryUrl(item.repository_url);
+                markIssueCompleteInstruction(this.channel, this.messageId, owner, repo, item.number)}
         )
 
         const information = openOnes.map((item, i) => {
@@ -110,7 +119,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 text: `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
                 fallback: item.html_url,
                 actions: [
-                    SlackMessages.rugButtonFrom({text: "Close issue"},
+                    SlackMessages.rugButtonFrom({text: "Complete!"},
                         closeInstructions[i]),
                 ],
             };
@@ -210,10 +219,34 @@ function parseRepositoryUrl(repositoryUrl: string): [string, string] {
     return [match[2], match[1]];
 }
 
-function closeInstruction(channel: string, corrid: string, item): SlackMessages.IdentifiableInstruction & Identifiable<any> {
+function markIssueCompleteInstruction(channel: string, messageId: string,
+                          owner: string, repo: string, issueNumber: string):
+    SlackMessages.IdentifiableInstruction & Identifiable<any> {
 
-    const [repo, owner] = parseRepositoryUrl(item.repository_url);
-    const instr: Identifiable<"command"> & any /* and Respondable */ = {
+    const instr: Identifiable<"command"> & any /* NOT Respondable */ = {
+        instruction: {
+            kind: "command", name: "MarkIssueComplete",
+            parameters: {
+                channel,
+                messageId,
+                issueNumber,
+                repo,
+                owner,
+            }
+        },
+    };
+    const identifier: SlackMessages.IdentifiableInstruction = {
+        id: `MARK-COMPLETE-${owner}-${repo}-${issueNumber}`
+    };
+    return {
+        ...instr,
+        ...identifier
+    }
+}
+
+function closeInstruction(owner: string, repo: string, issueNumber: string){
+
+    const instr = {
         instruction: {
             kind: "command", name: {
                 name: "CloseGitHubIssue",
@@ -221,23 +254,57 @@ function closeInstruction(channel: string, corrid: string, item): SlackMessages.
                 artifact: "github-rugs",
             },
             parameters: {
-                corrid,
-                issue: item.number,
+                issue: issueNumber,
                 repo,
                 owner,
             }
         },
-        onSuccess: new DirectedMessage("Closed <${item.html_url}|${owner}/${repo}#${item.number}"
-            , new ChannelAddress(channel)),
     };
-    const identifier: SlackMessages.IdentifiableInstruction = {
-        id: `CLOSE-${item.html_url}`
-    };
-    return {
-        ...instr,
-        ...identifier
-    }
+    return instr
 }
+
+@CommandHandler("MarkIssueComplete", "Stop progress and close an issue")
+@Tags("satellite-of-love", "github")
+@Intent("yo I am done")
+@Secrets("github://user_token?scopes=repo")
+class MarkIssueComplete implements HandleCommand {
+
+    // I want to be able to invoke this from the commandline (uncommonly)
+    // and also from a button in a message that will subsequently be updated.
+    @Parameter({pattern: Pattern.any})
+    public messageId: string = `not set`;
+
+    @MappedParameter(MappedParameters.SLACK_CHANNEL)
+    public channel: string = "general";
+
+    @MappedParameter(MappedParameters.GITHUB_REPOSITORY)
+    public repo: string = "general";
+
+    @MappedParameter(MappedParameters.GITHUB_OWNER)
+    public owner: string = "general";
+
+    @Parameter({pattern: Pattern.any})
+    public issueNumber: string;
+
+    handle(ctx: HandlerContext): CommandPlan {
+
+        const closeIssue: any = closeInstruction(
+            this.owner, this.repo, this.issueNumber);
+        closeIssue.onSuccess = 
+            this.send(`Closed issue ${this.owner}/${this.repo}#${this.issueNumber}`);
+        //const removeInProgressLabel
+
+        const plan = new CommandPlan();
+        plan.add(closeIssue);
+        return plan;
+    }
+
+    private send(msg: string) {
+        return new DirectedMessage(msg, new ChannelAddress(this.channel))
+    }
+
+}
+
 
 
 @CommandHandler("Dammit", "Do something please")
@@ -253,3 +320,4 @@ class Dammit implements HandleCommand {
 export const dammit = new Dammit();
 export const received = new ReceiveMyIssues();
 export const stuffInProgress = new StuffInProgress();
+export const mm = new MarkIssueComplete();
