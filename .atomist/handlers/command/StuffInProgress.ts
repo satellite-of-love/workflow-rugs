@@ -40,22 +40,21 @@ class StuffInProgress implements HandleCommand {
 
 
     public handle(command: HandlerContext): CommandPlan {
-        const plan = new CommandPlan();
-
+        const channel = this.channel;
         const issuesMessageId = `issues-for-${this.corrid}`;
-
         const user = "jessitron";
         const org = "satellite-of-love";
 
-        const instr = queryIssuesInstruction(user, org, issuesMessageId);
-        plan.add(instr);
+        const instr = queryIssuesInstruction(user, channel, org, issuesMessageId);
 
+        const plan = new CommandPlan();
+        plan.add(instr);
         return plan;
     }
 
 }
 
-function queryIssuesInstruction(user: string, org: string, messageId: string) {
+function queryIssuesInstruction(user: string, channel: string, org: string, messageId: string) {
 
     const base = `https://api.github.com/search/issues`;
 
@@ -77,7 +76,7 @@ function queryIssuesInstruction(user: string, org: string, messageId: string) {
         parameters: {
             gitHubUser: user,
             messageId,
-            channel: this.channel
+            channel
         }
     };
     CommonHandlers.handleErrors(instr, {msg: "The request to GitHub failed"});
@@ -96,7 +95,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
     public messageId: string;
 
     @Parameter({pattern: Pattern.any})
-    public channel: string = "general";
+    public channel: string;
 
     public handle(response: Response<any>): CommandPlan {
 
