@@ -61,7 +61,7 @@ function queryIssuesInstruction(user: string, channel: string, org: string, mess
 
     const instr = PlanUtils.execute("http",
         {
-            url: `${base}?q=assignee:${user}%20org:${org}%20state:open`,
+            url: `${base}?q=assignee:${user}%20org:${org}`,
             method: "get",
             config: {
                 headers: {
@@ -92,6 +92,36 @@ function closeIssueInstruction(channel: string, owner: string, repo: string, iss
         {
             url,
             method: "patch",
+            config: {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `token #{github://user_token?scopes=repo}`,
+                },
+                body: JSON.stringify({
+                    state: "closed"
+                })
+            },
+        },
+    );
+    instr.onError = {
+        kind: "respond",
+        name: LessGenericErrorHandler.handlerName,
+        parameters: {
+            msg: "Failure accessing " + url,
+            channel
+        }
+    };
+    return instr;
+}
+
+function removeLabelInstruction(channel: string, owner: string, repo: string, issueNumber: string, labelName: string) {
+
+    const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/labels/${labelName}`;
+
+    const instr = PlanUtils.execute("http",
+        {
+            url,
+            method: "put",
             config: {
                 headers: {
                     "Content-Type": "application/json",
@@ -325,14 +355,16 @@ class MarkIssueComplete implements HandleCommand {
         onSuccessPlan.add(
             this.send(`Closed issue ${this.owner}/${this.repo}#${this.issueNumber}`));
         if (this.messageId !== "`not set`") {
-            onSuccessPlan.add(this.send(`Refreshing original message ${this.messageId}`));
+            onSuccessPlan.add(this.debug(`Refreshing original message ${this.messageId}`));
             onSuccessPlan.add(queryIssuesInstruction(this.gitHubUser, this.channel, this.owner, this.messageId));
         }
         closeIssue.onSuccess = onSuccessPlan;
 
-        //const removeInProgressLabel
+        const removeInProgressLabel = removeLabelInstruction(this.channel, this.owner, this.repo, this.issueNumber, "in-progress");
 
         const plan = new CommandPlan();
+        plan.add(this.send(`Removing in-progress label`));
+        plan.add(removeInProgressLabel);
         plan.add(this.send(`Closing issue ${this.owner}/${this.repo}#${this.issueNumber}...`));
         plan.add(closeIssue);
         return plan;
@@ -340,6 +372,10 @@ class MarkIssueComplete implements HandleCommand {
 
     private send(msg: string) {
         return new DirectedMessage(msg, new ChannelAddress(this.channel))
+    }
+
+    private debug(msg: string) {
+        return new DirectedMessage(msg, new ChannelAddress("banana"))
     }
 
 }
