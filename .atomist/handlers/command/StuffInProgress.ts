@@ -121,7 +121,7 @@ function removeLabelInstruction(channel: string, owner: string, repo: string, is
     const instr = PlanUtils.execute("http",
         {
             url,
-            method: "put",
+            method: "delete",
             config: {
                 headers: {
                     "Content-Type": "application/json",
