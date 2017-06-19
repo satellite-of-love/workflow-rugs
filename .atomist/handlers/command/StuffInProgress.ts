@@ -103,8 +103,9 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
 
         const closeInstructions = openOnes.map((item) => {
-        const [repo, owner] = parseRepositoryUrl(item.repository_url);
-                markIssueCompleteInstruction(this.channel, this.messageId, owner, repo, item.number)}
+                const [repo, owner] = parseRepositoryUrl(item.repository_url);
+                return markIssueCompleteInstruction(this.channel, this.messageId, owner, repo, item.number)
+            }
         )
 
         const information = openOnes.map((item, i) => {
@@ -220,8 +221,7 @@ function parseRepositoryUrl(repositoryUrl: string): [string, string] {
 }
 
 function markIssueCompleteInstruction(channel: string, messageId: string,
-                          owner: string, repo: string, issueNumber: string):
-    SlackMessages.IdentifiableInstruction & Identifiable<any> {
+                                      owner: string, repo: string, issueNumber: string): SlackMessages.IdentifiableInstruction & Identifiable<any> {
 
     const instr: Identifiable<"command"> & any /* NOT Respondable */ = {
         instruction: {
@@ -244,7 +244,7 @@ function markIssueCompleteInstruction(channel: string, messageId: string,
     }
 }
 
-function closeInstruction(owner: string, repo: string, issueNumber: string){
+function closeInstruction(owner: string, repo: string, issueNumber: string) {
 
     const instr = {
         instruction: {
@@ -290,7 +290,7 @@ class MarkIssueComplete implements HandleCommand {
 
         const closeIssue: any = closeInstruction(
             this.owner, this.repo, this.issueNumber);
-        closeIssue.onSuccess = 
+        closeIssue.onSuccess =
             this.send(`Closed issue ${this.owner}/${this.repo}#${this.issueNumber}`);
         //const removeInProgressLabel
 
@@ -304,7 +304,6 @@ class MarkIssueComplete implements HandleCommand {
     }
 
 }
-
 
 
 @CommandHandler("Dammit", "Do something please")
