@@ -12,7 +12,7 @@ import {
     Identifiable,
     MessageMimeTypes,
     Response,
-    ResponseMessage, MappedParameters
+    UpdatableMessage, MappedParameters
 } from "@atomist/rug/operations/Handlers";
 import * as CommonHandlers from "@atomist/rugs/operations/CommonHandlers";
 import * as PlanUtils from "@atomist/rugs/operations/PlanUtils";
@@ -156,8 +156,8 @@ class ReceiveMyIssues implements HandleResponse<any> {
             attachments: closedInformation.concat(information),
         }, true);
 
-        let msg = new ResponseMessage(slack,
-            MessageMimeTypes.SLACK_JSON)
+        let msg = new UpdatableMessage(this.messageId, slack, new ChannelAddress(this.channel),
+            MessageMimeTypes.SLACK_JSON);
         closeInstructions.forEach((item) =>
             msg.addAction(item)
         );
