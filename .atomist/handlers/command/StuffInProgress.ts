@@ -315,7 +315,7 @@ class MarkIssueComplete implements HandleCommand {
             this.send(`Closed issue ${this.owner}/${this.repo}#${this.issueNumber}`));
         if (this.messageId !== "`not set`") {
             onSuccessPlan.add(this.send(`Refreshing original message ${this.messageId}`));
-            onSuccessPlan.add(queryIssuesInstruction(this.gitHubUser, this.owner, this.messageId));
+            onSuccessPlan.add(queryIssuesInstruction(this.gitHubUser, this.channel, this.owner, this.messageId));
         }
         closeIssue.onSuccess = onSuccessPlan;
 
