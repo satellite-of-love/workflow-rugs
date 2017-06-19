@@ -229,9 +229,13 @@ function parseRepositoryUrl(repositoryUrl: string): [string, string] {
     return [match[2], match[1]];
 }
 
-function markIssueCompleteInstruction(channel: string, messageId: string,
+function markIssueCompleteInstruction(channel: string,
+                                      messageId: string,
                                       gitHubUser: string,
-                                      owner: string, repo: string, issueNumber: string): SlackMessages.IdentifiableInstruction & Identifiable<any> {
+                                      owner: string,
+                                      repo: string,
+                                      issueNumber: string):
+    SlackMessages.IdentifiableInstruction & Identifiable<any> {
 
     const instr: Identifiable<"command"> & any /* NOT Respondable */ = {
         instruction: {
@@ -242,6 +246,7 @@ function markIssueCompleteInstruction(channel: string, messageId: string,
                 issueNumber,
                 repo,
                 owner,
+                gitHubUser,
             }
         },
     };
@@ -310,6 +315,7 @@ class MarkIssueComplete implements HandleCommand {
         onSuccessPlan.add(
             this.send(`Closed issue ${this.owner}/${this.repo}#${this.issueNumber}`));
         if (this.messageId !== "`not set`") {
+            onSuccessPlan.add(this.send(`Refreshing original message ${this.messageId}`));
             onSuccessPlan.add(queryIssuesInstruction(this.gitHubUser, this.owner, this.messageId));
         }
         closeIssue.onSuccess = onSuccessPlan;
@@ -317,7 +323,7 @@ class MarkIssueComplete implements HandleCommand {
         //const removeInProgressLabel
 
         const plan = new CommandPlan();
-        plan.add(this.send("Closing issue ${this.owner}/${this.repo}#${this.issueNumber}..."));
+        plan.add(this.send(`Closing issue ${this.owner}/${this.repo}#${this.issueNumber}...`));
         plan.add(closeIssue);
         return plan;
     }
