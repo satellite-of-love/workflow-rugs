@@ -150,9 +150,11 @@ class ReceiveLog implements HandleResponse<any> {
     }
 }
 
-@ResponseHandler("LessGenericErrorHandler", "Displays an error in chat")
+@ResponseHandler(LessGenericErrorHandler.handlerName, "Displays an error in chat")
 @Tags("errors")
-class LessGenericErrorHandler implements HandleResponse<any> {
+export class LessGenericErrorHandler implements HandleResponse<any> {
+
+    static handlerName = "LessGenericErrorHandler";
 
     @Parameter({description: "Error prefix", pattern: "@any", required: false})
     public msg: string;

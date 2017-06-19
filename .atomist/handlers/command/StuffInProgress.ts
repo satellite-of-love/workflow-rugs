@@ -19,6 +19,7 @@ import * as PlanUtils from "@atomist/rugs/operations/PlanUtils";
 import * as SlackMessages from "@atomist/slack-messages/SlackMessages";
 import {toEmoji} from "./SlackEmoji";
 import {Pattern} from "@atomist/rug/operations/RugOperation";
+import {LessGenericErrorHandler} from "../event/FailedBuild";
 
 /**
  * A sample Rug TypeScript command handler.
@@ -60,7 +61,7 @@ function queryIssuesInstruction(user: string, channel: string, org: string, mess
 
     const instr = PlanUtils.execute("http",
         {
-            url: `${base}?q=assignee:${user}%20org:${org}`,
+            url: `${base}?q=assignee:${user}%20org:${org}%20state:open`,
             method: "get",
             config: {
                 headers: {
@@ -80,6 +81,36 @@ function queryIssuesInstruction(user: string, channel: string, org: string, mess
         }
     };
     CommonHandlers.handleErrors(instr, {msg: "The request to GitHub failed"});
+    return instr;
+}
+
+function closeIssueInstruction(channel: string, owner: string, repo: string, issueNumber: string) {
+
+    const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`;
+
+    const instr = PlanUtils.execute("http",
+        {
+            url,
+            method: "patch",
+            config: {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `token #{github://user_token?scopes=repo}`,
+                },
+                body: JSON.stringify({
+                    state: "closed"
+                })
+            },
+        },
+    );
+    instr.onError = {
+        kind: "respond",
+        name: LessGenericErrorHandler.handlerName,
+        parameters: {
+            msg: "Failure accessing " + url,
+            channel
+        }
+    };
     return instr;
 }
 
@@ -106,7 +137,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
         const openOnes = result.items.filter((item) => !item.closed_at);
 
 
-        const closeInstructions = openOnes.map((item) => {
+        const completeIssueInstructions = openOnes.map((item) => {
                 const [repo, owner] = parseRepositoryUrl(item.repository_url);
                 return markIssueCompleteInstruction(
                     this.channel,
@@ -129,7 +160,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 fallback: item.html_url,
                 actions: [
                     SlackMessages.rugButtonFrom({text: "Complete!"},
-                        closeInstructions[i]),
+                        completeIssueInstructions[i]),
                 ],
             };
             return attachment;
@@ -157,7 +188,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
         let msg = new UpdatableMessage(this.messageId, slack, new ChannelAddress(this.channel),
             MessageMimeTypes.SLACK_JSON);
-        closeInstructions.forEach((item) =>
+        completeIssueInstructions.forEach((item) =>
             msg.addAction(item)
         );
 
@@ -258,26 +289,6 @@ function markIssueCompleteInstruction(channel: string,
     }
 }
 
-function closeInstruction(messageId, owner: string, repo: string, issueNumber: string) {
-
-    const instr = {
-        instruction: {
-            kind: "command", name: {
-                name: "CloseGitHubIssue",
-                group: "atomist",
-                artifact: "github-rugs",
-            },
-            parameters: {
-                corrid: messageId,
-                issue: issueNumber,
-                repo,
-                owner,
-            }
-        },
-    };
-    return instr
-}
-
 @CommandHandler(MarkIssueComplete.handlerName, "Stop progress and close an issue")
 @Tags("satellite-of-love", "github")
 @Intent("yo I am done")
@@ -308,7 +319,7 @@ class MarkIssueComplete implements HandleCommand {
 
     handle(ctx: HandlerContext): CommandPlan {
 
-        const closeIssue: any = closeInstruction(this.messageId,
+        const closeIssue: any = closeIssueInstruction(this.channel,
             this.owner, this.repo, this.issueNumber);
         const onSuccessPlan = new CommandPlan();
         onSuccessPlan.add(
