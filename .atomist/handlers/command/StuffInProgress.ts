@@ -42,7 +42,7 @@ class StuffInProgress implements HandleCommand {
     public handle(command: HandlerContext): CommandPlan {
         const plan = new CommandPlan();
 
-        const issuesMessageId = `issues-for-$corrid`;
+        const issuesMessageId = `issues-for-${this.corrid}`;
 
         const user = "jessitron";
         const org = "satellite-of-love";
@@ -73,7 +73,7 @@ function queryIssuesInstruction(user: string, org: string, messageId: string) {
     );
     instr.onSuccess = {
         kind: "respond",
-        name: "ReceiveMyIssues",
+        name: ReceiveMyIssues.handlerName,
         parameters: {
             messageId,
             channel: this.channel
@@ -83,8 +83,11 @@ function queryIssuesInstruction(user: string, org: string, messageId: string) {
     return instr;
 }
 
-@ResponseHandler("ReceiveMyIssues", "step 2 in StuffInProgress")
+@ResponseHandler(ReceiveMyIssues.handlerName, "step 2 in StuffInProgress")
 class ReceiveMyIssues implements HandleResponse<any> {
+
+    static handlerName = "ReceiveMyIssues";
+
     @Parameter({pattern: Pattern.any})
     public messageId: string;
 
@@ -95,8 +98,6 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
         const result = JSON.parse(response.body);
 
-        const count = result.total_count;
-
         // TODO: in the search string, ignore ones closed a long time ago so we don't get to many.
         const closedOnes = result.items.filter((item) => this.not_long_ago(item.closed_at));
         const openOnes = result.items.filter((item) => !item.closed_at);
@@ -104,9 +105,12 @@ class ReceiveMyIssues implements HandleResponse<any> {
 
         const closeInstructions = openOnes.map((item) => {
                 const [repo, owner] = parseRepositoryUrl(item.repository_url);
-                return markIssueCompleteInstruction(this.channel, this.messageId, owner, repo, item.number)
+                return markIssueCompleteInstruction(
+                    this.channel,
+                    this.messageId,
+                    owner, repo, item.number)
             }
-        )
+        );
 
         const information = openOnes.map((item, i) => {
             const type = this.issueOrPR(item);
@@ -244,7 +248,7 @@ function markIssueCompleteInstruction(channel: string, messageId: string,
     }
 }
 
-function closeInstruction(owner: string, repo: string, issueNumber: string) {
+function closeInstruction(messageId, owner: string, repo: string, issueNumber: string) {
 
     const instr = {
         instruction: {
@@ -254,6 +258,7 @@ function closeInstruction(owner: string, repo: string, issueNumber: string) {
                 artifact: "github-rugs",
             },
             parameters: {
+                corrid: messageId,
                 issue: issueNumber,
                 repo,
                 owner,
@@ -288,13 +293,14 @@ class MarkIssueComplete implements HandleCommand {
 
     handle(ctx: HandlerContext): CommandPlan {
 
-        const closeIssue: any = closeInstruction(
+        const closeIssue: any = closeInstruction(this.messageId,
             this.owner, this.repo, this.issueNumber);
         closeIssue.onSuccess =
             this.send(`Closed issue ${this.owner}/${this.repo}#${this.issueNumber}`);
         //const removeInProgressLabel
 
         const plan = new CommandPlan();
+        plan.add(this.send("Closing issue ${this.owner}/${this.repo}#${this.issueNumber}..."));
         plan.add(closeIssue);
         return plan;
     }
