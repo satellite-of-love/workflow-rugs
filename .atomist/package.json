@@ -21,7 +21,7 @@
     "url": "https://github.com/satellite-of-love/workflow-rugs/issues"
   },
   "atomist": {
-    "requires": "[1.0.0-m.3,2.0.0)",
+    "requires": "[1.0.0-m.4,2.0.0)",
     "dependencies": {
       "satellite-of-love:rest-service-generator": "[1.0.0,2.0.0)",
       "satellite-of-love:atomist-k8-specs": "[1.0.0,2.0.0)",
