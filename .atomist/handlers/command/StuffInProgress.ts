@@ -75,6 +75,7 @@ function queryIssuesInstruction(user: string, org: string, messageId: string) {
         kind: "respond",
         name: ReceiveMyIssues.handlerName,
         parameters: {
+            gitHubUser: user,
             messageId,
             channel: this.channel
         }
@@ -87,6 +88,9 @@ function queryIssuesInstruction(user: string, org: string, messageId: string) {
 class ReceiveMyIssues implements HandleResponse<any> {
 
     static handlerName = "ReceiveMyIssues";
+
+    @Parameter({pattern: Pattern.any})
+    public gitHubUser: string;
 
     @Parameter({pattern: Pattern.any})
     public messageId: string;
@@ -108,6 +112,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 return markIssueCompleteInstruction(
                     this.channel,
                     this.messageId,
+                    this.gitHubUser,
                     owner, repo, item.number)
             }
         );
@@ -225,11 +230,12 @@ function parseRepositoryUrl(repositoryUrl: string): [string, string] {
 }
 
 function markIssueCompleteInstruction(channel: string, messageId: string,
+                                      gitHubUser: string,
                                       owner: string, repo: string, issueNumber: string): SlackMessages.IdentifiableInstruction & Identifiable<any> {
 
     const instr: Identifiable<"command"> & any /* NOT Respondable */ = {
         instruction: {
-            kind: "command", name: "MarkIssueComplete",
+            kind: "command", name: MarkIssueComplete.handlerName,
             parameters: {
                 channel,
                 messageId,
@@ -268,11 +274,13 @@ function closeInstruction(messageId, owner: string, repo: string, issueNumber: s
     return instr
 }
 
-@CommandHandler("MarkIssueComplete", "Stop progress and close an issue")
+@CommandHandler(MarkIssueComplete.handlerName, "Stop progress and close an issue")
 @Tags("satellite-of-love", "github")
 @Intent("yo I am done")
 @Secrets("github://user_token?scopes=repo")
 class MarkIssueComplete implements HandleCommand {
+
+    static handlerName = "MarkIssueComplete";
 
     // I want to be able to invoke this from the commandline (uncommonly)
     // and also from a button in a message that will subsequently be updated.
@@ -291,12 +299,21 @@ class MarkIssueComplete implements HandleCommand {
     @Parameter({pattern: Pattern.any})
     public issueNumber: string;
 
+    @Parameter({pattern: Pattern.any})
+    public gitHubUser: string = "`not-set`";
+
     handle(ctx: HandlerContext): CommandPlan {
 
         const closeIssue: any = closeInstruction(this.messageId,
             this.owner, this.repo, this.issueNumber);
-        closeIssue.onSuccess =
-            this.send(`Closed issue ${this.owner}/${this.repo}#${this.issueNumber}`);
+        const onSuccessPlan = new CommandPlan();
+        onSuccessPlan.add(
+            this.send(`Closed issue ${this.owner}/${this.repo}#${this.issueNumber}`));
+        if (this.messageId !== "`not set`") {
+            onSuccessPlan.add(queryIssuesInstruction(this.gitHubUser, this.owner, this.messageId));
+        }
+        closeIssue.onSuccess = onSuccessPlan;
+
         //const removeInProgressLabel
 
         const plan = new CommandPlan();
