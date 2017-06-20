@@ -177,10 +177,15 @@ class ReceiveMyIssues implements HandleResponse<any> {
             }
         );
 
+        function hasLabel(item, labelName: string): boolean {
+           return item.labels.filter(l => l.name === labelName).length > 0
+        }
+
         const information = openOnes.map((item, i) => {
             const type = this.issueOrPR(item);
             const repo = this.issueRepo(item);
             const labels = item.labels.map((label) => toEmoji(label.name)).join(" ");
+            const closeButtonLabel = hasLabel(item, "in-progress") ? "Complete!" : "Close";
 
             const attachment: any = {
                 mrkdwn_in: ["text"],
@@ -189,7 +194,7 @@ class ReceiveMyIssues implements HandleResponse<any> {
                 text: `${labels} created ${this.timeSince(item.created_at)}, updated ${this.timeSince(item.updated_at)}`,
                 fallback: item.html_url,
                 actions: [
-                    SlackMessages.rugButtonFrom({text: "Complete!"},
+                    SlackMessages.rugButtonFrom({text: closeButtonLabel},
                         completeIssueInstructions[i]),
                 ],
             };
